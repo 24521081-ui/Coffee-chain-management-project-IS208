@@ -10,6 +10,7 @@ import com.phungloccoffee.model.NhaCungCap;
 import com.phungloccoffee.model.WarehouseSlip;
 import com.phungloccoffee.model.WarehouseSlipLine;
 import com.phungloccoffee.util.AlertUtils;
+import com.phungloccoffee.util.AutoCodeGenerator;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -33,6 +34,7 @@ import javafx.util.converter.DoubleStringConverter;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -65,12 +67,14 @@ public class WarehouseFormController {
     private final ObservableList<MaterialRow> materials = FXCollections.observableArrayList();
     private final ObservableList<ImportDetailRow> details = FXCollections.observableArrayList();
     private final NumberFormat currencyFormat = NumberFormat.getInstance(new Locale("vi", "VN"));
+    private final List<String> savedReceiptCodes = new ArrayList<>();
 
     @FXML
     private void initialize() {
         receiptDatePicker.setValue(LocalDate.now());
         createdByField.setText(SessionManager.getCurrentUser() == null ? "" : SessionManager.getCurrentUser().getFullName());
         createdByField.setEditable(false);
+        setupAutoCodeField();
 
         materialCodeColumn.setCellValueFactory(new PropertyValueFactory<>("code"));
         materialNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -121,7 +125,7 @@ public class WarehouseFormController {
             }
         } catch (Exception e) {
             supplierComboBox.setItems(FXCollections.observableArrayList(
-                    new NhaCungCap("NCC001", "Nhà cung cấp mặc định", null, null, 1)
+                    new NhaCungCap("NCC001", "NhÃ  cung cáº¥p máº·c Ä‘á»‹nh", null, null, 1)
             ));
             supplierComboBox.getSelectionModel().selectFirst();
         }
@@ -133,17 +137,24 @@ public class WarehouseFormController {
             materials.setAll(inventoryItems.stream().map(MaterialRow::from).toList());
         } catch (Exception e) {
             materials.setAll(
-                    new MaterialRow("NL001", "Cà phê rang xay", "KG", 34, 180000),
-                    new MaterialRow("NL002", "Sữa tươi không đường", "L", 12, 32000)
+                    new MaterialRow("NL001", "CÃ  phÃª rang xay", "KG", 34, 180000),
+                    new MaterialRow("NL002", "Sá»¯a tÆ°Æ¡i khÃ´ng Ä‘Æ°á»ng", "L", 12, 32000)
             );
         }
+    }
+
+    private void setupAutoCodeField() {
+        savedReceiptCodes.addAll(List.of("PN001", "PN002"));
+        receiptCodeField.setEditable(false);
+        receiptCodeField.getStyleClass().add("readonly-code-field");
+        receiptCodeField.setText(nextReceiptCode());
     }
 
     @FXML
     private void handleAddSelectedMaterial() {
         MaterialRow selected = materialTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            AlertUtils.showWarning("Vui lòng chọn nguyên liệu cần nhập.");
+            AlertUtils.showWarning("Vui lÃ²ng chá»n nguyÃªn liá»‡u cáº§n nháº­p.");
             return;
         }
         ImportDetailRow existing = details.stream()
@@ -166,35 +177,43 @@ public class WarehouseFormController {
 
     @FXML
     private void saveImport() {
+        if (details.isEmpty()) {
+            AlertUtils.showWarning("Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t nguyÃªn liá»‡u vÃ o phiáº¿u nháº­p.");
+            return;
+        }
         persist(true);
     }
 
     @FXML
     private void cancelForm() {
-        receiptCodeField.clear();
         attachmentField.clear();
         totalQuantityField.clear();
         noteArea.clear();
         details.clear();
         syncTotalsFromDetails();
+        receiptCodeField.setText(nextReceiptCode());
     }
 
     private void persist(boolean submit) {
         try {
             WarehouseSlip slip = new WarehouseSlip();
-            slip.setSlipId(receiptCodeField.getText());
+            slip.setSlipId(consumeReceiptCode());
             slip.setSupplierId(supplierComboBox.getValue() == null ? null : supplierComboBox.getValue().getNhaCungCapId());
             slip.setNote(joinNoteAndAttachment());
             slip.setLines(details.stream().map(ImportDetailRow::toLine).toList());
             if (submit) {
                 workflowBUS.submitImport(slip);
-                AlertUtils.showInfo("Phiếu nhập kho đã gửi duyệt. Tồn kho chưa được cập nhật.");
+                AlertUtils.showInfo("Phiáº¿u nháº­p kho Ä‘Ã£ gá»­i duyá»‡t. Tá»“n kho chÆ°a Ä‘Æ°á»£c cáº­p nháº­t.");
             } else {
                 workflowBUS.saveImportDraft(slip);
-                AlertUtils.showInfo("Đã lưu nháp phiếu nhập kho.");
+                AlertUtils.showInfo("ÄÃ£ lÆ°u nhÃ¡p phiáº¿u nháº­p kho.");
             }
-            cancelForm();
+            attachmentField.clear();
+            totalQuantityField.clear();
+            noteArea.clear();
+            details.clear();
             loadMaterials();
+            syncTotalsFromDetails();
         } catch (ValidationException | PermissionException | DatabaseException e) {
             AlertUtils.showError(e.getMessage());
         }
@@ -206,13 +225,13 @@ public class WarehouseFormController {
         String quantity = totalQuantityField.getText() == null ? "" : totalQuantityField.getText().trim();
         StringBuilder builder = new StringBuilder();
         if (!attachment.isBlank()) {
-            builder.append("Chứng từ: ").append(attachment);
+            builder.append("Chá»©ng tá»«: ").append(attachment);
         }
         if (!quantity.isBlank()) {
             if (builder.length() > 0) {
                 builder.append("\n");
             }
-            builder.append("Số lượng: ").append(quantity);
+            builder.append("Sá»‘ lÆ°á»£ng: ").append(quantity);
         }
         if (!note.isBlank()) {
             if (builder.length() > 0) {
@@ -230,8 +249,22 @@ public class WarehouseFormController {
         totalQuantityField.setText(trim(totalQuantity));
     }
 
+    private String consumeReceiptCode() {
+        String code = receiptCodeField.getText();
+        if (code == null || code.isBlank()) {
+            code = nextReceiptCode();
+        }
+        savedReceiptCodes.add(code);
+        receiptCodeField.setText(nextReceiptCode());
+        return code;
+    }
+
+    private String nextReceiptCode() {
+        return AutoCodeGenerator.generateNextCode("PN", savedReceiptCodes);
+    }
+
     private String formatCurrency(double value) {
-        return currencyFormat.format(value) + " đ";
+        return currencyFormat.format(value) + " Ä‘";
     }
 
     private String trim(double value) {
@@ -239,7 +272,7 @@ public class WarehouseFormController {
     }
 
     private class RemoveCell extends TableCell<ImportDetailRow, Void> {
-        private final Button removeButton = new Button("Xóa");
+        private final Button removeButton = new Button("XÃ³a");
         private final HBox box = new HBox(removeButton);
 
         RemoveCell() {
@@ -291,7 +324,7 @@ public class WarehouseFormController {
         public String getUnit() { return unit; }
         public double getPrice() { return price; }
         public String getStockText() { return valueText(stock, unit); }
-        public String getPriceText() { return NumberFormat.getInstance(new Locale("vi", "VN")).format(price) + " đ"; }
+        public String getPriceText() { return NumberFormat.getInstance(new Locale("vi", "VN")).format(price) + " Ä‘"; }
 
         private static String valueText(double value, String unit) {
             return (value == Math.rint(value) ? String.valueOf((int) value) : String.valueOf(value)) + " " + unit;

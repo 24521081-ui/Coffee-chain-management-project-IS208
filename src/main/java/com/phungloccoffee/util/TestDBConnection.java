@@ -8,6 +8,7 @@ public class TestDBConnection {
 
     public static void main(String[] args) {
         System.out.println("Dang test ket noi Oracle...");
+        DBConnection.printDebugConfig();
 
         try (Connection conn = DBConnection.getConnection()) {
             System.out.println("Ket noi Oracle thanh cong!");

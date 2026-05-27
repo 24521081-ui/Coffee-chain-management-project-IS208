@@ -1,13 +1,40 @@
 package com.phungloccoffee.gui.controller.pos;
 
+import java.math.BigDecimal;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+import com.phungloccoffee.App;
+import com.phungloccoffee.bus.POSBUS;
+import com.phungloccoffee.bus.ProductBUS;
+import com.phungloccoffee.gui.model.AppUserSession;
 import com.phungloccoffee.gui.model.OrderItem;
 import com.phungloccoffee.gui.model.ProductOption;
 import com.phungloccoffee.gui.model.ProductOption.ProductStatus;
 import com.phungloccoffee.gui.model.ToppingItem;
+import com.phungloccoffee.gui.service.SessionManager;
+import com.phungloccoffee.model.Order;
+import com.phungloccoffee.model.OrderDetail;
+import com.phungloccoffee.model.Product;
+import com.phungloccoffee.offline.NetworkMonitor;
+import com.phungloccoffee.offline.OfflineStorage;
+import com.phungloccoffee.offline.SyncService;
+import com.phungloccoffee.util.AlertUtils;
 import com.phungloccoffee.util.CurrencyFormatter;
+
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
+import javafx.application.Platform;
+import javafx.scene.Parent;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -26,19 +53,10 @@ import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
-import java.math.BigDecimal;
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
 public class POSMainController {
-    private static final String CATEGORY_ALL = "Tất cả";
-    private static final List<String> CATEGORIES = List.of(CATEGORY_ALL, "Cà phê", "Trà sữa", "Trà", "Bánh", "Topping");
+    private static final String CATEGORY_ALL = "Tat ca";
     private static final List<String> SUGAR_LEVELS = List.of("0%", "30%", "50%", "70%", "100%");
-    private static final List<String> ICE_LEVELS = List.of("Không đá", "Ít đá", "Bình thường", "Nhiều đá");
+    private static final List<String> ICE_LEVELS = List.of("Khong da", "It da", "Binh thuong", "Nhieu da");
 
     @FXML private TextField searchProductField;
     @FXML private HBox categoryChipBox;
@@ -46,6 +64,9 @@ public class POSMainController {
     @FXML private VBox cartItemsBox;
     @FXML private Label totalLabel;
     @FXML private Label notificationLabel;
+    @FXML private Label connectionStatusLabel;
+    @FXML private Label offlineWarningLabel;
+    @FXML private Label pendingSyncCountLabel;
     @FXML private StackPane customizeOverlay;
     @FXML private StackPane customizeDialogContainer;
 
@@ -53,8 +74,15 @@ public class POSMainController {
     private final List<ProductOption> toppingCatalog = new ArrayList<>();
     private final List<OrderItem> cartItems = new ArrayList<>();
     private final List<CheckBox> toppingCheckboxes = new ArrayList<>();
+    private final ProductBUS productBUS = new ProductBUS();
+    private final POSBUS posBUS = new POSBUS();
+    private final NetworkMonitor networkMonitor = NetworkMonitor.getInstance();
+    private final OfflineStorage offlineStorage = OfflineStorage.getInstance();
+    private final SyncService syncService = new SyncService();
+    private final List<String> categories = new ArrayList<>();
 
     private String selectedCategory = CATEGORY_ALL;
+    private AppUserSession currentUser;
     private ProductOption currentProduct;
     private OrderItem editingItem;
     private int currentQuantity = 1;
@@ -66,6 +94,13 @@ public class POSMainController {
 
     @FXML
     private void initialize() {
+        if (!SessionManager.isLoggedIn()) {
+            showInlineMessage("Vui long dang nhap truoc khi ban hang.");
+            productTilePane.getChildren().setAll(createEmptyLabel("Chua dang nhap"));
+            return;
+        }
+        currentUser = SessionManager.getCurrentUser();
+        configureConnectivity();
         initProductData();
         initCategoryChips();
         searchProductField.textProperty().addListener((observable, oldValue, newValue) -> filterProducts());
@@ -87,52 +122,155 @@ public class POSMainController {
 
     @FXML
     private void createOrder() {
+        handleCreateInvoice();
+    }
+
+    @FXML
+    private void handleCreateInvoice() {
         if (cartItems.isEmpty()) {
-            showInlineMessage("Vui lòng thêm món trước khi tạo hóa đơn.");
+            showInlineMessage("Gio hang dang rong.");
             return;
         }
-        showInlineMessage("Đã chuẩn bị chi tiết hóa đơn với đầy đủ tùy chỉnh món.");
+        try {
+            Order order = createPendingOrderFromCart();
+            clearCartAndRefreshMenu();
+            if (isLocalOrder(order.getDonHangId())) {
+                AlertUtils.showInfo("Tao hoa don offline thanh cong. Ma don local: " + order.getDonHangId()
+                        + "\nDon se duoc dong bo khi co mang.");
+            } else {
+                AlertUtils.showInfo("Tao hoa don thanh cong. Ma don: " + order.getDonHangId());
+            }
+            updateConnectivityStatus();
+        } catch (Exception e) {
+            showInlineMessage(e.getMessage());
+            AlertUtils.showError(e.getMessage());
+        }
     }
 
-    private void initProductData() {
+    @FXML
+    private void handlePayment() {
+        if (cartItems.isEmpty()) {
+            showInlineMessage("Gio hang dang rong.");
+            return;
+        }
+        try {
+            Order order = createPendingOrderFromCart();
+            clearCartAndRefreshMenu();
+            openPaymentScreen(order.getDonHangId());
+            updateConnectivityStatus();
+        } catch (Exception e) {
+            showInlineMessage(e.getMessage());
+            AlertUtils.showError(e.getMessage());
+        }
+    }
+
+    private Order createPendingOrderFromCart() throws Exception {
+        BigDecimal expectedTotal = calculateCartTotal();
+        return posBUS.createPendingOrder(toOrderDetails(), expectedTotal);
+    }
+
+    private void clearCartAndRefreshMenu() {
+        cartItems.clear();
+        renderCartItems();
+        if (networkMonitor.isOnline()) {
+            initProductData();
+            initCategoryChips();
+        }
+        filterProducts();
+    }
+
+    private void configureConnectivity() {
+        networkMonitor.addListener(online -> Platform.runLater(() -> {
+            updateConnectivityStatus();
+            if (online) {
+                syncOfflineOrdersAndRefreshCache();
+            }
+        }));
+        networkMonitor.start();
+        updateConnectivityStatus();
+        if (networkMonitor.isOnline()) {
+            syncOfflineOrdersAndRefreshCache();
+        }
+    }
+
+    private void syncOfflineOrdersAndRefreshCache() {
+        CompletableFuture.runAsync(() -> {
+            try {
+                syncService.syncPending(currentUser == null ? null : currentUser.getBranchId());
+            } catch (Exception e) {
+                Platform.runLater(() -> showInlineMessage(e.getMessage()));
+            } finally {
+                Platform.runLater(this::updateConnectivityStatus);
+            }
+        });
+    }
+
+    private void updateConnectivityStatus() {
+        boolean online = networkMonitor.isOnline();
+        if (connectionStatusLabel != null) {
+            connectionStatusLabel.setText(online ? "Online" : "Offline");
+            connectionStatusLabel.getStyleClass().removeAll("status-success", "status-danger", "status-warning");
+            connectionStatusLabel.getStyleClass().add(online ? "status-success" : "status-danger");
+        }
+        if (offlineWarningLabel != null) {
+            offlineWarningLabel.setText(online ? "" : "Dang offline - giao dich se duoc luu tam va dong bo khi co mang");
+            offlineWarningLabel.setManaged(!online);
+            offlineWarningLabel.setVisible(!online);
+        }
+        if (pendingSyncCountLabel != null) {
+            try {
+                pendingSyncCountLabel.setText("Cho dong bo: " + offlineStorage.countPendingOrders());
+            } catch (Exception e) {
+                pendingSyncCountLabel.setText("Cho dong bo: ?");
+            }
+        }
+    }
+    private void initProductData() { 
         products.clear();
-        products.addAll(List.of(
-                product("CF001", "Cà phê sữa", "Cà phê", 35000, ProductStatus.AVAILABLE),
-                product("CF002", "Bạc xỉu", "Cà phê", 38000, ProductStatus.AVAILABLE),
-                product("CF003", "Americano", "Cà phê", 32000, ProductStatus.AVAILABLE),
-                product("CF004", "Cold Brew", "Cà phê", 45000, ProductStatus.OUT_OF_STOCK),
-
-                product("TS001", "Trà sữa trân châu", "Trà sữa", 42000, ProductStatus.AVAILABLE),
-                product("TS002", "Trà sữa matcha", "Trà sữa", 45000, ProductStatus.AVAILABLE),
-                product("TS003", "Trà sữa socola", "Trà sữa", 45000, ProductStatus.PAUSED),
-
-                product("TR001", "Trà đào cam sả", "Trà", 39000, ProductStatus.AVAILABLE),
-                product("TR002", "Trà vải", "Trà", 39000, ProductStatus.AVAILABLE),
-                product("TR003", "Trà lài mật ong", "Trà", 36000, ProductStatus.AVAILABLE),
-
-                product("BK001", "Bánh tiramisu", "Bánh", 55000, ProductStatus.AVAILABLE),
-                product("BK002", "Croissant bơ", "Bánh", 32000, ProductStatus.AVAILABLE),
-                product("BK003", "Bánh phô mai", "Bánh", 49000, ProductStatus.OUT_OF_STOCK),
-
-                product("TP001", "Trân châu đen", "Topping", 10000, ProductStatus.AVAILABLE),
-                product("TP002", "Trân châu trắng", "Topping", 12000, ProductStatus.AVAILABLE),
-                product("TP003", "Pudding trứng", "Topping", 15000, ProductStatus.AVAILABLE),
-                product("TP004", "Kem cheese", "Topping", 15000, ProductStatus.AVAILABLE)
-        ));
-
         toppingCatalog.clear();
-        toppingCatalog.addAll(products.stream()
-                .filter(ProductOption::isToppingCategory)
-                .toList());
+        categories.clear();
+        categories.add(CATEGORY_ALL);
+
+        try {
+            List<Product> loadedProducts = productBUS.getProductsForPOS(
+                    currentUser == null ? null : currentUser.getBranchId());
+            for (Product product : loadedProducts) {
+                ProductOption option = toProductOption(product);
+                products.add(option);
+                if (option.isToppingCategory()) {
+                    toppingCatalog.add(option);
+                }
+                if (!safe(option.getCategory()).isBlank() && !categories.contains(option.getCategory())) {
+                    categories.add(option.getCategory());
+                }
+            }
+            if (products.isEmpty()) {
+                showInlineMessage("Chua co san pham thanh pham trong Oracle.");
+            }
+        } catch (Exception e) {
+            products.clear();
+            toppingCatalog.clear();
+            showInlineMessage(e.getMessage());
+        }
     }
 
-    private ProductOption product(String id, String name, String category, int price, ProductStatus status) {
-        return new ProductOption(id, name, category, BigDecimal.valueOf(price), status);
+    private ProductOption toProductOption(Product product) {
+        String category = safe(product.getCategoryName());
+        if (category.isBlank()) {
+            category = "Khac";
+        }
+        ProductStatus status = product.getTrangThai() == 1 ? ProductStatus.AVAILABLE : ProductStatus.PAUSED;
+        return new ProductOption(
+                product.getSanPhamId(),
+                product.getTenSanPham(),
+                category,
+                product.getGiaBan() == null ? BigDecimal.ZERO : product.getGiaBan(),
+                status
+        );
     }
-
     private void initCategoryChips() {
         categoryChipBox.getChildren().clear();
-        for (String category : CATEGORIES) {
+        for (String category : categories) {
             Button chip = new Button(category);
             chip.getStyleClass().add("product-category-chip");
             chip.setOnAction(event -> {
@@ -169,7 +307,7 @@ public class POSMainController {
 
     private void renderProductCards(List<ProductOption> filteredProducts) {
         if (filteredProducts.isEmpty()) {
-            Label emptyState = new Label("Không tìm thấy món phù hợp");
+            Label emptyState = new Label("Chua co mon trong gio");
             emptyState.getStyleClass().add("cart-item-detail");
             productTilePane.getChildren().setAll(emptyState);
             return;
@@ -196,12 +334,12 @@ public class POSMainController {
         Label price = new Label(formatMoneyCompact(product.getBasePrice()));
         price.getStyleClass().add("product-card-price");
 
-        Button addButton = new Button(product.isToppingCategory() ? "Chọn kèm món" : "Thêm");
+        Button addButton = new Button(product.isToppingCategory() ? "Chon kem mon" : "Them");
         addButton.getStyleClass().add("primary-button");
         addButton.setMaxWidth(Double.MAX_VALUE);
         addButton.setOnAction(event -> {
             if (product.isToppingCategory()) {
-                showInlineMessage("Topping được chọn khi tùy chỉnh món uống.");
+                showInlineMessage("Topping duoc chon khi tuy chinh mon uong.");
                 return;
             }
             openCustomizeProductDialog(product);
@@ -209,7 +347,7 @@ public class POSMainController {
 
         if (!product.getStatus().isAvailable()) {
             addButton.setDisable(true);
-            addButton.setText(product.getStatus() == ProductStatus.OUT_OF_STOCK ? "Hết hàng" : "Tạm ngưng");
+            addButton.setText(product.getStatus() == ProductStatus.OUT_OF_STOCK ? "Het hang" : "Tam ngung");
         }
 
         VBox card = new VBox(12, topRow, name, price, addButton);
@@ -263,7 +401,7 @@ public class POSMainController {
         Label dialogTitle = new Label(product.getProductName());
         dialogTitle.getStyleClass().add("order-option-dialog-title");
 
-        Label basePrice = new Label("Giá gốc: " + formatMoneyCompact(product.getBasePrice()));
+        Label basePrice = new Label("Gia goc: " + formatMoneyCompact(product.getBasePrice()));
         basePrice.getStyleClass().add("order-option-meta");
 
         HBox metadata = new HBox(8, createCategoryBadge(product.getCategory()), basePrice, createStatusBadge(product.getStatus()));
@@ -272,7 +410,7 @@ public class POSMainController {
 
         Region headerSpacer = new Region();
         HBox.setHgrow(headerSpacer, Priority.ALWAYS);
-        Button closeButton = new Button("Đóng");
+        Button closeButton = new Button("Dong");
         closeButton.getStyleClass().add("cart-action-button");
         closeButton.setOnAction(event -> closeCustomizeProductDialog());
 
@@ -285,8 +423,8 @@ public class POSMainController {
         if (product.isDrink()) {
             sugarToggleGroup = new ToggleGroup();
             iceToggleGroup = new ToggleGroup();
-            body.getChildren().add(createToggleOptionSection("Mức đường", SUGAR_LEVELS, sugarToggleGroup, existingItem == null ? "100%" : existingItem.getSugarLevel()));
-            body.getChildren().add(createToggleOptionSection("Mức đá", ICE_LEVELS, iceToggleGroup, existingItem == null ? "Bình thường" : existingItem.getIceLevel()));
+            body.getChildren().add(createToggleOptionSection("Muc duong", SUGAR_LEVELS, sugarToggleGroup, existingItem == null ? "100%" : existingItem.getSugarLevel()));
+            body.getChildren().add(createToggleOptionSection("Muc da", ICE_LEVELS, iceToggleGroup, existingItem == null ? "Binh thuong" : existingItem.getIceLevel()));
             body.getChildren().add(createToppingSection(existingItem));
         }
         body.getChildren().add(createNoteSection(existingItem));
@@ -297,11 +435,11 @@ public class POSMainController {
         bodyScroll.setMaxHeight(500);
         bodyScroll.getStyleClass().add("order-option-scroll");
 
-        Button cancelButton = new Button("Hủy");
+        Button cancelButton = new Button("Huy");
         cancelButton.getStyleClass().add("secondary-button");
         cancelButton.setOnAction(event -> closeCustomizeProductDialog());
 
-        Button submitButton = new Button(existingItem == null ? "Thêm vào giỏ" : "Cập nhật món");
+        Button submitButton = new Button(existingItem == null ? "Them vao gio" : "Cap nhat mon");
         submitButton.getStyleClass().add("primary-button");
         submitButton.setOnAction(event -> handleAddCustomizedItem());
 
@@ -325,7 +463,7 @@ public class POSMainController {
     }
 
     private VBox createQuantitySection() {
-        Label title = new Label("Số lượng");
+        Label title = new Label("So luong");
         title.getStyleClass().add("order-option-section-title");
 
         Button minusButton = new Button("-");
@@ -389,7 +527,7 @@ public class POSMainController {
             checkBox.setUserData(topping);
             checkBox.setSelected(existingItem != null && hasTopping(existingItem, topping.getProductId()));
             if (!topping.getStatus().isAvailable()) {
-                checkBox.setText(checkBox.getText() + " - Hết nguyên liệu");
+                checkBox.setText(checkBox.getText() + " - Het nguyen lieu");
                 checkBox.setDisable(true);
             }
             toppingCheckboxes.add(checkBox);
@@ -399,11 +537,11 @@ public class POSMainController {
     }
 
     private VBox createNoteSection(OrderItem existingItem) {
-        Label title = new Label("Ghi chú");
+        Label title = new Label("Ghi chu");
         title.getStyleClass().add("order-option-section-title");
 
         noteTextArea = new TextArea();
-        noteTextArea.setPromptText("Ví dụ: ít ngọt, không lấy đá, thêm sữa, tách riêng topping...");
+        noteTextArea.setPromptText("Vi du: it ngot, khong lay da, them sua, tach rieng topping...");
         noteTextArea.setPrefRowCount(3);
         noteTextArea.setWrapText(true);
         noteTextArea.getStyleClass().add("page-text-area");
@@ -454,13 +592,39 @@ public class POSMainController {
         item.setLineTotal(calculateItemTotal(item));
 
         if (editingItem == null) {
-            cartItems.add(item);
+            OrderItem existingItem = findMergeableCartItem(item);
+            if (existingItem == null) {
+                cartItems.add(item);
+            } else {
+                existingItem.setQuantity(existingItem.getQuantity() + item.getQuantity());
+                existingItem.setLineTotal(calculateItemTotal(existingItem));
+            }
         }
 
         renderCartItems();
         closeCustomizeProductDialog();
     }
 
+    private OrderItem findMergeableCartItem(OrderItem newItem) {
+        return cartItems.stream()
+                .filter(item -> Objects.equals(item.getProductId(), newItem.getProductId()))
+                .filter(item -> Objects.equals(safe(item.getSugarLevel()), safe(newItem.getSugarLevel())))
+                .filter(item -> Objects.equals(safe(item.getIceLevel()), safe(newItem.getIceLevel())))
+                .filter(item -> Objects.equals(safe(item.getNote()), safe(newItem.getNote())))
+                .filter(item -> sameToppings(item, newItem))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean sameToppings(OrderItem first, OrderItem second) {
+        Set<String> firstIds = first.getToppings().stream()
+                .map(ToppingItem::getToppingId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<String> secondIds = second.getToppings().stream()
+                .map(ToppingItem::getToppingId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return firstIds.equals(secondIds);
+    }
     private List<ToppingItem> collectSelectedToppings() {
         List<ToppingItem> selectedToppings = new ArrayList<>();
         for (CheckBox checkBox : toppingCheckboxes) {
@@ -498,6 +662,22 @@ public class POSMainController {
         renderCartItems();
     }
 
+    private void handleIncreaseCartItem(OrderItem item) {
+        item.setQuantity(item.getQuantity() + 1);
+        item.setLineTotal(calculateItemTotal(item));
+        renderCartItems();
+    }
+
+    private void handleDecreaseCartItem(OrderItem item) {
+        if (item.getQuantity() <= 1) {
+            handleRemoveCartItem(item);
+            return;
+        }
+        item.setQuantity(item.getQuantity() - 1);
+        item.setLineTotal(calculateItemTotal(item));
+        renderCartItems();
+    }
+
     private BigDecimal calculateItemTotal(OrderItem item) {
         BigDecimal toppingTotal = item.getToppings().stream()
                 .map(topping -> topping.getPrice() == null ? BigDecimal.ZERO : topping.getPrice())
@@ -521,7 +701,7 @@ public class POSMainController {
         BigDecimal cartTotal = calculateCartTotal();
         cartItemsBox.getChildren().clear();
         if (cartItems.isEmpty()) {
-            Label emptyState = new Label("Chưa có món trong giỏ");
+            Label emptyState = new Label("Chua co mon trong gio");
             emptyState.getStyleClass().add("cart-empty-label");
             cartItemsBox.getChildren().add(emptyState);
         } else {
@@ -547,15 +727,23 @@ public class POSMainController {
 
         VBox optionLines = renderOrderItemOptions(item);
 
-        Button editButton = new Button("Sửa");
+        Button minusButton = new Button("-");
+        minusButton.getStyleClass().add("cart-action-button");
+        minusButton.setOnAction(event -> handleDecreaseCartItem(item));
+
+        Button plusButton = new Button("+");
+        plusButton.getStyleClass().add("cart-action-button");
+        plusButton.setOnAction(event -> handleIncreaseCartItem(item));
+
+        Button editButton = new Button("Sua");
         editButton.getStyleClass().add("cart-action-button");
         editButton.setOnAction(event -> handleEditCartItem(item));
 
-        Button removeButton = new Button("Xóa");
+        Button removeButton = new Button("Xoa");
         removeButton.getStyleClass().addAll("cart-action-button", "cart-action-button-danger");
         removeButton.setOnAction(event -> handleRemoveCartItem(item));
 
-        HBox actions = new HBox(8, editButton, removeButton);
+        HBox actions = new HBox(8, minusButton, plusButton, editButton, removeButton);
         actions.setAlignment(Pos.CENTER_RIGHT);
 
         VBox card = new VBox(8, header, optionLines, actions);
@@ -578,7 +766,7 @@ public class POSMainController {
         }
 
         if (!safe(item.getNote()).isBlank()) {
-            options.getChildren().add(createCartDetailLabel("Ghi chú: " + safe(item.getNote())));
+            options.getChildren().add(createCartDetailLabel("Ghi chu: " + safe(item.getNote())));
         }
         return options;
     }
@@ -593,19 +781,19 @@ public class POSMainController {
     private String buildOptionSummary(OrderItem item) {
         List<String> details = new ArrayList<>();
         if (!safe(item.getSugarLevel()).isBlank()) {
-            details.add("Đường " + safe(item.getSugarLevel()));
+            details.add("Duong " + safe(item.getSugarLevel()));
         }
         if (!safe(item.getIceLevel()).isBlank()) {
             details.add(safe(item.getIceLevel()));
         }
-        return String.join(" • ", details);
+        return String.join(" â€¢ ", details);
     }
 
     public String buildOrderDetailText(OrderItem item) {
         List<String> customization = new ArrayList<>();
         String optionSummary = buildOptionSummary(item);
         if (!optionSummary.isBlank()) {
-            customization.add(optionSummary.replace(" • ", ", "));
+            customization.add(optionSummary.replace(" â€¢ ", ", "));
         }
 
         String toppingSummary = item.getToppings().stream()
@@ -616,20 +804,63 @@ public class POSMainController {
         }
 
         if (!safe(item.getNote()).isBlank()) {
-            customization.add("Ghi chú: " + safe(item.getNote()));
+            customization.add("Ghi chu: " + safe(item.getNote()));
         }
 
-        String optionText = customization.isEmpty() ? "Không tùy chỉnh" : String.join(", ", customization);
-        return "Món: " + item.getProductName()
-                + " | Tùy chỉnh: " + optionText
+        String optionText = customization.isEmpty() ? "Khong tuy chinh" : String.join(", ", customization);
+        return "Mon: " + item.getProductName()
+                + " | Tuy chinh: " + optionText
                 + " | SL: " + item.getQuantity()
-                + " | Đơn giá: " + CurrencyFormatter.format(item.getBasePrice())
-                + " | Thành tiền: " + CurrencyFormatter.format(item.getLineTotal());
+                + " | Don gia: " + CurrencyFormatter.format(item.getBasePrice())
+                + " | Thanh tien: " + CurrencyFormatter.format(item.getLineTotal());
+    }
+
+    private List<OrderDetail> toOrderDetails() {
+        List<OrderDetail> details = new ArrayList<>();
+        for (OrderItem item : cartItems) {
+            details.add(new OrderDetail(
+                    null,
+                    null,
+                    item.getProductId(),
+                    BigDecimal.valueOf(item.getQuantity()),
+                    item.getBasePrice(),
+                    calculateItemTotal(item),
+                    buildOrderDetailText(item),
+                    null,
+                    null
+            ));
+        }
+        return details;
+    }
+
+    private void openPaymentScreen(String orderId) throws Exception {
+        FXMLLoader loader = new FXMLLoader(App.class.getResource("/com/phungloccoffee/gui/view/PaymentScreen.fxml"));
+        Parent page = loader.load();
+        PaymentController controller = loader.getController();
+        controller.setOrderId(orderId);
+        findContentArea().getChildren().setAll(page);
+    }
+
+    private StackPane findContentArea() {
+        Node node = cartItemsBox;
+        while (node != null) {
+            if (node instanceof StackPane stackPane && stackPane.getStyleClass().contains("content-area")) {
+                return stackPane;
+            }
+            node = node.getParent();
+        }
+        throw new IllegalStateException("Khong tim thay vung hien thi noi dung de mo man hinh thanh toan.");
     }
 
     private boolean hasTopping(OrderItem item, String toppingId) {
         return item.getToppings().stream()
                 .anyMatch(topping -> Objects.equals(topping.getToppingId(), toppingId));
+    }
+
+    private Label createEmptyLabel(String message) {
+        Label label = new Label(message);
+        label.getStyleClass().add("cart-empty-label");
+        return label;
     }
 
     private void showInlineMessage(String message) {
@@ -659,7 +890,11 @@ public class POSMainController {
 
     private String formatMoneyCompact(BigDecimal amount) {
         long value = amount == null ? 0L : amount.longValue();
-        return String.format(Locale.US, "%,d", value).replace(",", ".") + "đ";
+        return String.format(Locale.US, "%,d", value).replace(",", ".") + "d";
+    }
+
+    private boolean isLocalOrder(String orderId) {
+        return orderId != null && orderId.contains("-");
     }
 
     private void addStyleClass(Node node, String styleClass) {
@@ -668,3 +903,9 @@ public class POSMainController {
         }
     }
 }
+
+
+
+
+
+

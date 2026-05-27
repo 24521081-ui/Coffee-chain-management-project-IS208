@@ -1,11 +1,15 @@
 package com.phungloccoffee.model;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public class Product {
+public class Product implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String sanPhamId;
     private String danhMucId;
+    private String tenDanhMuc;
     private String tenSanPham;
     private String loaiSanPham;
     private String donViTinh;
@@ -20,8 +24,15 @@ public class Product {
 
     public Product(String sanPhamId, String danhMucId, String tenSanPham, String loaiSanPham, String donViTinh,
                    BigDecimal giaBan, BigDecimal giaVon, int trangThai, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this(sanPhamId, danhMucId, null, tenSanPham, loaiSanPham, donViTinh, giaBan, giaVon, trangThai, createdAt, updatedAt);
+    }
+
+    public Product(String sanPhamId, String danhMucId, String tenDanhMuc, String tenSanPham, String loaiSanPham,
+                   String donViTinh, BigDecimal giaBan, BigDecimal giaVon, int trangThai,
+                   LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.sanPhamId = sanPhamId;
         this.danhMucId = danhMucId;
+        this.tenDanhMuc = tenDanhMuc;
         this.tenSanPham = tenSanPham;
         this.loaiSanPham = loaiSanPham;
         this.donViTinh = donViTinh;
@@ -40,6 +51,8 @@ public class Product {
     public void setSanPhamId(String sanPhamId) { this.sanPhamId = sanPhamId; }
     public String getDanhMucId() { return danhMucId; }
     public void setDanhMucId(String danhMucId) { this.danhMucId = danhMucId; }
+    public String getTenDanhMuc() { return tenDanhMuc; }
+    public void setTenDanhMuc(String tenDanhMuc) { this.tenDanhMuc = tenDanhMuc; }
     public String getTenSanPham() { return tenSanPham; }
     public void setTenSanPham(String tenSanPham) { this.tenSanPham = tenSanPham; }
     public String getLoaiSanPham() { return loaiSanPham; }
@@ -61,10 +74,15 @@ public class Product {
     public void setCode(String code) { this.sanPhamId = code; }
     public String getName() { return tenSanPham; }
     public void setName(String name) { this.tenSanPham = name; }
+    public String getCategoryName() { return tenDanhMuc == null || tenDanhMuc.isBlank() ? danhMucId : tenDanhMuc; }
     public BigDecimal getPrice() { return giaBan; }
     public void setPrice(BigDecimal price) { this.giaBan = price; }
     public String getStatus() { return trangThai == 1 ? "Đang hoạt động" : "Ngừng bán"; }
-    public void setStatus(String status) { this.trangThai = "1".equals(status) || "ACTIVE".equalsIgnoreCase(status) ? 1 : 0; }
+    public void setStatus(String status) {
+        this.trangThai = "1".equals(status)
+                || "ACTIVE".equalsIgnoreCase(status)
+                || "Đang hoạt động".equalsIgnoreCase(status) ? 1 : 0;
+    }
 
     @Override
     public String toString() {

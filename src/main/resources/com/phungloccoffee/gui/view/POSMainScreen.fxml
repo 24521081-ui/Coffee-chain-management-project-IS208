@@ -19,7 +19,7 @@
         <VBox spacing="12" styleClass="filter-card pos-filter-card">
             <HBox styleClass="report-controls-row">
                 <TextField fx:id="searchProductField"
-                           promptText="Tìm món, mã sản phẩm..."
+                           promptText="Tim mon, ma san pham..."
                            prefWidth="320"
                            styleClass="page-input" />
                 <Region HBox.hgrow="ALWAYS" />
@@ -27,7 +27,17 @@
                        managed="false"
                        visible="false"
                        styleClass="pos-inline-message" />
-                <Label text="Ca hiện tại: Sáng" styleClass="status-badge status-info" />
+                <Label fx:id="offlineWarningLabel"
+                       managed="false"
+                       visible="false"
+                       styleClass="status-badge status-warning" />
+                <Label fx:id="pendingSyncCountLabel"
+                       text="Cho dong bo: 0"
+                       styleClass="status-badge status-info" />
+                <Label fx:id="connectionStatusLabel"
+                       text="Online"
+                       styleClass="status-badge status-success" />
+                <Label text="Ca hien tai: Sang" styleClass="status-badge status-info" />
             </HBox>
             <HBox fx:id="categoryChipBox"
                   alignment="CENTER_LEFT"
@@ -38,8 +48,8 @@
         <HBox styleClass="main-layout" VBox.vgrow="ALWAYS">
             <VBox spacing="14" styleClass="content-card" HBox.hgrow="ALWAYS">
                 <VBox spacing="4">
-                    <Label text="Menu sản phẩm" styleClass="section-title" />
-                    <Label text="Chọn món, cấu hình đường đá topping rồi thêm vào giỏ" styleClass="section-subtitle" />
+                    <Label text="Menu san pham" styleClass="section-title" />
+                    <Label text="Chon mon, cau hinh duong da topping roi them vao gio" styleClass="section-subtitle" />
                 </VBox>
                 <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll" VBox.vgrow="ALWAYS">
                     <TilePane fx:id="productTilePane"
@@ -52,19 +62,20 @@
 
             <VBox spacing="14" styleClass="table-card,pos-cart-panel" prefWidth="460">
                 <VBox spacing="4">
-                    <Label text="Giỏ hàng" styleClass="section-title" />
-                    <Label text="Các món đang chờ tạo hóa đơn" styleClass="section-subtitle" />
+                    <Label text="Gio hang" styleClass="section-title" />
+                    <Label text="Cac mon dang cho tao hoa don" styleClass="section-subtitle" />
                 </VBox>
                 <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll cart-scroll" VBox.vgrow="ALWAYS">
                     <VBox fx:id="cartItemsBox" spacing="10" styleClass="cart-list" />
                 </ScrollPane>
                 <HBox alignment="CENTER_LEFT" spacing="12" styleClass="cart-total-row">
-                    <Label text="Tổng cộng" styleClass="section-subtitle" />
+                    <Label text="Tong cong" styleClass="section-subtitle" />
                     <Region HBox.hgrow="ALWAYS" />
                     <Label fx:id="totalLabel" styleClass="metric-value cart-total-value" />
                 </HBox>
                 <HBox spacing="10" alignment="CENTER_RIGHT">
-                    <Button text="Tạo hóa đơn" onAction="#createOrder" styleClass="primary-button" />
+                    <Button text="Tao hoa don" onAction="#handleCreateInvoice" styleClass="secondary-button" />
+                    <Button text="Thanh toan" onAction="#handlePayment" styleClass="primary-button" />
                 </HBox>
             </VBox>
         </HBox>

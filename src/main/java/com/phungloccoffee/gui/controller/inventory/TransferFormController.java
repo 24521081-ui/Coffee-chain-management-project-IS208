@@ -1,6 +1,7 @@
 package com.phungloccoffee.gui.controller.inventory;
 
 import com.phungloccoffee.util.AlertUtils;
+import com.phungloccoffee.util.AutoCodeGenerator;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -13,6 +14,9 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class TransferFormController {
     @FXML private ComboBox<String> sourceComboBox;
     @FXML private ComboBox<String> targetComboBox;
@@ -23,6 +27,7 @@ public class TransferFormController {
     @FXML private TableColumn<TransferRow, String> quantityColumn;
     @FXML private TableColumn<TransferRow, String> statusColumn;
     @FXML private TableColumn<TransferRow, Void> actionColumn;
+    private final List<String> savedTransferCodes = new ArrayList<>(List.of("DC001", "DC002"));
 
     @FXML
     private void initialize() {
@@ -48,7 +53,9 @@ public class TransferFormController {
 
     @FXML
     private void saveTransfer() {
-        AlertUtils.showInfo("Đã lưu phiếu điều chuyển trên giao diện.");
+        String code = AutoCodeGenerator.generateNextCode("DC", savedTransferCodes);
+        savedTransferCodes.add(code);
+        AlertUtils.showInfo("Đã lưu phiếu điều chuyển " + code + " trên giao diện.");
     }
 
     private static class StatusCell<T> extends TableCell<T, String> {

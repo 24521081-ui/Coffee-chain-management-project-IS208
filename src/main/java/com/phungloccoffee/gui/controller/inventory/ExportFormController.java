@@ -9,6 +9,7 @@ import com.phungloccoffee.model.InventoryItem;
 import com.phungloccoffee.model.WarehouseSlip;
 import com.phungloccoffee.model.WarehouseSlipLine;
 import com.phungloccoffee.util.AlertUtils;
+import com.phungloccoffee.util.AutoCodeGenerator;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -32,6 +33,7 @@ import javafx.util.converter.DoubleStringConverter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -63,13 +65,15 @@ public class ExportFormController {
     private final WarehouseWorkflowBUS workflowBUS = new WarehouseWorkflowBUS();
     private final ObservableList<MaterialRow> materials = FXCollections.observableArrayList();
     private final ObservableList<ExportDetailRow> details = FXCollections.observableArrayList();
+    private final List<String> submittedExportCodes = new ArrayList<>();
 
     @FXML
     private void initialize() {
         exportDatePicker.setValue(LocalDate.now());
         createdByField.setText(SessionManager.getCurrentUser() == null ? "" : SessionManager.getCurrentUser().getFullName());
         createdByField.setEditable(false);
-        reasonComboBox.getItems().setAll("Bổ sung ca bán", "Xuất hủy", "Điều chuyển nội bộ", "Khác");
+        setupAutoCodeField();
+        reasonComboBox.getItems().setAll("Bá»• sung ca bÃ¡n", "Xuáº¥t há»§y", "Äiá»u chuyá»ƒn ná»™i bá»™", "KhÃ¡c");
         reasonComboBox.getSelectionModel().selectFirst();
         totalQuantityField.setEditable(false);
 
@@ -95,6 +99,7 @@ public class ExportFormController {
             ExportDetailRow row = event.getRowValue();
             row.setQuantity(Math.max(0, event.getNewValue()));
             detailTable.refresh();
+            updateTotalQuantity();
         });
         detailStockColumn.setCellValueFactory(new PropertyValueFactory<>("stockText"));
         detailAfterColumn.setCellValueFactory(new PropertyValueFactory<>("stockAfterText"));
@@ -114,16 +119,23 @@ public class ExportFormController {
         } catch (Exception e) {
             materials.setAll(
                     new MaterialRow("NL001", "Ca phe rang xay", "KG", 34, 20),
-                    new MaterialRow("NL002", "Sữa tươi không đường", "L", 12, 15)
+                    new MaterialRow("NL002", "Sá»¯a tÆ°Æ¡i khÃ´ng Ä‘Æ°á»ng", "L", 12, 15)
             );
         }
+    }
+
+    private void setupAutoCodeField() {
+        submittedExportCodes.addAll(List.of("PX001", "PX002"));
+        exportCodeField.setEditable(false);
+        exportCodeField.getStyleClass().add("readonly-code-field");
+        exportCodeField.setText(nextExportCode());
     }
 
     @FXML
     private void handleAddSelectedMaterial() {
         MaterialRow selected = materialTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            AlertUtils.showWarning("Vui lòng chọn nguyên liệu cần xuất.");
+            AlertUtils.showWarning("Vui lÃ²ng chá»n nguyÃªn liá»‡u cáº§n xuáº¥t.");
             return;
         }
         Optional<Double> quantity = promptForQuantity(selected);
@@ -146,9 +158,9 @@ public class ExportFormController {
 
     private Optional<Double> promptForQuantity(MaterialRow selected) {
         TextInputDialog dialog = new TextInputDialog("1");
-        dialog.setTitle("Chọn số lượng xuất");
-        dialog.setHeaderText("Nhập số lượng cho " + selected.getName());
-        dialog.setContentText("Số lượng:");
+        dialog.setTitle("Chá»n sá»‘ lÆ°á»£ng xuáº¥t");
+        dialog.setHeaderText("Nháº­p sá»‘ lÆ°á»£ng cho " + selected.getName());
+        dialog.setContentText("Sá»‘ lÆ°á»£ng:");
         Optional<String> result = dialog.showAndWait();
         if (result.isEmpty()) {
             return Optional.empty();
@@ -156,12 +168,12 @@ public class ExportFormController {
         try {
             double value = Double.parseDouble(result.get().trim());
             if (value <= 0) {
-                AlertUtils.showWarning("Số lượng xuất phải lớn hơn 0.");
+                AlertUtils.showWarning("Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0.");
                 return Optional.empty();
             }
             return Optional.of(value);
         } catch (NumberFormatException ex) {
-            AlertUtils.showWarning("Số lượng không hợp lệ.");
+            AlertUtils.showWarning("Sá»‘ lÆ°á»£ng khÃ´ng há»£p lá»‡.");
             return Optional.empty();
         }
     }
@@ -173,34 +185,47 @@ public class ExportFormController {
 
     @FXML
     private void submitExport() {
+        if (details.isEmpty()) {
+            AlertUtils.showWarning("Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t nguyÃªn liá»‡u vÃ o phiáº¿u xuáº¥t.");
+            return;
+        }
+        boolean hasInvalidStock = details.stream().anyMatch(row -> row.getStockAfter() < 0);
+        if (hasInvalidStock) {
+            AlertUtils.showError("KhÃ´ng thá»ƒ gá»­i duyá»‡t vÃ¬ cÃ³ dÃ²ng KhÃ´ng Ä‘á»§ tá»“n.");
+            return;
+        }
         persist(true);
     }
 
     @FXML
     private void cancelForm() {
-        exportCodeField.clear();
         receiverField.clear();
         totalQuantityField.clear();
         noteArea.clear();
         details.clear();
+        exportCodeField.setText(nextExportCode());
     }
 
     private void persist(boolean submit) {
         try {
             WarehouseSlip slip = new WarehouseSlip();
-            slip.setSlipId(exportCodeField.getText());
+            slip.setSlipId(consumeExportCode());
             slip.setReason(reasonComboBox.getValue());
             slip.setNote(buildNote());
             slip.setLines(details.stream().map(ExportDetailRow::toLine).toList());
             if (submit) {
                 workflowBUS.submitExport(slip);
-                AlertUtils.showInfo("Phiếu xuất kho đã gửi duyệt. Tồn kho chưa bị trừ.");
+                AlertUtils.showInfo("Phiáº¿u xuáº¥t kho Ä‘Ã£ gá»­i duyá»‡t. Tá»“n kho chÆ°a bá»‹ trá»«.");
             } else {
                 workflowBUS.saveExportDraft(slip);
-                AlertUtils.showInfo("Đã lưu nháp phiếu xuất kho.");
+                AlertUtils.showInfo("ÄÃ£ lÆ°u nhÃ¡p phiáº¿u xuáº¥t kho.");
             }
-            cancelForm();
+            receiverField.clear();
+            totalQuantityField.clear();
+            noteArea.clear();
+            details.clear();
             loadMaterials();
+            updateTotalQuantity();
         } catch (ValidationException | PermissionException | DatabaseException e) {
             AlertUtils.showError(e.getMessage());
         }
@@ -209,7 +234,7 @@ public class ExportFormController {
     private String buildNote() {
         StringBuilder builder = new StringBuilder();
         if (receiverField.getText() != null && !receiverField.getText().isBlank()) {
-            builder.append("Nơi nhận: ").append(receiverField.getText().trim());
+            builder.append("NÆ¡i nháº­n: ").append(receiverField.getText().trim());
         }
         if (noteArea.getText() != null && !noteArea.getText().isBlank()) {
             if (builder.length() > 0) {
@@ -222,7 +247,21 @@ public class ExportFormController {
 
     private void updateTotalQuantity() {
         double total = details.stream().mapToDouble(ExportDetailRow::getQuantity).sum();
-        totalQuantityField.setText(quantityText(total, "đơn vị"));
+        totalQuantityField.setText(quantityText(total, "Ä‘Æ¡n vá»‹"));
+    }
+
+    private String consumeExportCode() {
+        String code = exportCodeField.getText();
+        if (code == null || code.isBlank()) {
+            code = nextExportCode();
+        }
+        submittedExportCodes.add(code);
+        exportCodeField.setText(nextExportCode());
+        return code;
+    }
+
+    private String nextExportCode() {
+        return AutoCodeGenerator.generateNextCode("PX", submittedExportCodes);
     }
 
     private String quantityText(double value, String unit) {
@@ -244,8 +283,8 @@ public class ExportFormController {
             }
             Label badge = new Label(status);
             badge.getStyleClass().addAll("status-badge", switch (status) {
-                case "Không đủ tồn" -> "status-danger";
-                case "Dưới mức cảnh báo" -> "status-warning";
+                case "KhÃ´ng Ä‘á»§ tá»“n" -> "status-danger";
+                case "DÆ°á»›i má»©c cáº£nh bÃ¡o" -> "status-warning";
                 default -> "status-success";
             });
             setGraphic(badge);
@@ -255,7 +294,7 @@ public class ExportFormController {
     }
 
     private class RemoveCell extends TableCell<ExportDetailRow, Void> {
-        private final Button removeButton = new Button("Xóa");
+        private final Button removeButton = new Button("XÃ³a");
         private final HBox box = new HBox(removeButton);
 
         RemoveCell() {
@@ -343,12 +382,12 @@ public class ExportFormController {
 
         public String getStatus() {
             if (getStockAfter() < 0) {
-                return "Không đủ tồn";
+                return "KhÃ´ng Ä‘á»§ tá»“n";
             }
             if (getStockAfter() < warningLevel) {
-                return "Dưới mức cảnh báo";
+                return "DÆ°á»›i má»©c cáº£nh bÃ¡o";
             }
-            return "Hợp lệ";
+            return "Há»£p lá»‡";
         }
 
         public WarehouseSlipLine toLine() {
@@ -357,7 +396,7 @@ public class ExportFormController {
             line.setItemName(getName());
             line.setUnit(getUnit());
             line.setQuantity(BigDecimal.valueOf(getQuantity()));
-            line.setNote("Tồn hiện tại: " + getStockText());
+            line.setNote("Tá»“n hiá»‡n táº¡i: " + getStockText());
             return line;
         }
     }

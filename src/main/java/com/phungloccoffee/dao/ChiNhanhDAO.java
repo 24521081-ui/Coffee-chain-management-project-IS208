@@ -50,6 +50,25 @@ public class ChiNhanhDAO {
         }
     }
 
+    public List<ChiNhanh> findAll() throws DatabaseException {
+        String sql = """
+                SELECT chi_nhanh_id, ten_chi_nhanh, phone, dia_chi, trang_thai, created_at, updated_at
+                FROM chi_nhanh
+                ORDER BY ten_chi_nhanh
+                """;
+        List<ChiNhanh> branches = new ArrayList<>();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                branches.add(map(rs));
+            }
+            return branches;
+        } catch (SQLException e) {
+            throw new DatabaseException("Không thể tải danh sách chi nhánh.", e);
+        }
+    }
+
     public ChiNhanh findById(String chiNhanhId) throws DatabaseException {
         String sql = """
                 SELECT chi_nhanh_id, ten_chi_nhanh, phone, dia_chi, trang_thai, created_at, updated_at
@@ -68,6 +87,67 @@ public class ChiNhanhDAO {
         } catch (SQLException e) {
             throw new DatabaseException("Không thể tải chi nhánh.", e);
         }
+    }
+
+    public void save(ChiNhanh branch) throws DatabaseException {
+        if (existsById(branch.getChiNhanhId())) {
+            update(branch);
+        } else {
+            insert(branch);
+        }
+    }
+
+    public void insert(ChiNhanh branch) throws DatabaseException {
+        String sql = """
+                INSERT INTO chi_nhanh (chi_nhanh_id, ten_chi_nhanh, dia_chi, phone, trang_thai, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, SYSTIMESTAMP, SYSTIMESTAMP)
+                """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            bindBranch(stmt, branch);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DatabaseException("Không thể thêm chi nhánh.", e);
+        }
+    }
+
+    public void update(ChiNhanh branch) throws DatabaseException {
+        String sql = """
+                UPDATE chi_nhanh
+                SET ten_chi_nhanh = ?, dia_chi = ?, phone = ?, trang_thai = ?, updated_at = SYSTIMESTAMP
+                WHERE chi_nhanh_id = ?
+                """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, branch.getTenChiNhanh());
+            stmt.setString(2, branch.getDiaChi());
+            stmt.setString(3, branch.getPhone());
+            stmt.setInt(4, branch.getTrangThai());
+            stmt.setString(5, branch.getChiNhanhId());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DatabaseException("Không thể cập nhật chi nhánh.", e);
+        }
+    }
+
+    public void updateStatus(String chiNhanhId, int status) throws DatabaseException {
+        String sql = "UPDATE chi_nhanh SET trang_thai = ?, updated_at = SYSTIMESTAMP WHERE chi_nhanh_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, status);
+            stmt.setString(2, chiNhanhId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DatabaseException("Không thể cập nhật trạng thái chi nhánh.", e);
+        }
+    }
+
+    private void bindBranch(PreparedStatement stmt, ChiNhanh branch) throws SQLException {
+        stmt.setString(1, branch.getChiNhanhId());
+        stmt.setString(2, branch.getTenChiNhanh());
+        stmt.setString(3, branch.getDiaChi());
+        stmt.setString(4, branch.getPhone());
+        stmt.setInt(5, branch.getTrangThai());
     }
 
     private ChiNhanh map(ResultSet rs) throws SQLException {

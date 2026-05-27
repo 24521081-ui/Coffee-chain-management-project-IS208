@@ -65,6 +65,21 @@ public class WarehouseTransactionDAO {
         }
     }
 
+    public List<String> findTransactionCodes() throws DatabaseException {
+        String sql = "SELECT phieu_xuat_id FROM phieu_xuat_kho ORDER BY ngay_xuat DESC";
+        List<String> codes = new ArrayList<>();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                codes.add(rs.getString("phieu_xuat_id"));
+            }
+            return codes;
+        } catch (SQLException e) {
+            throw new DatabaseException("Không thể tải mã phiếu kho.", e);
+        }
+    }
+
     public void updateStatus(int transactionId, String status) throws DatabaseException {
         updateStatus(String.valueOf(transactionId), status);
     }

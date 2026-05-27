@@ -29,7 +29,7 @@
             </VBox>
             <GridPane styleClass="form-grid">
                 <Label text="Mã phiếu" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                <TextField fx:id="exportCodeField" promptText="Tự sinh nếu để trống" prefWidth="230" styleClass="page-input" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                <TextField fx:id="exportCodeField" editable="false" promptText="Tự động sinh khi lưu" prefWidth="230" styleClass="page-input readonly-code-field" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                 <Label text="Ngày xuất" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="0" />
                 <DatePicker fx:id="exportDatePicker" prefWidth="230" styleClass="page-date" GridPane.columnIndex="3" GridPane.rowIndex="0" />
                 <Label text="Lý do xuất" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="1" />
