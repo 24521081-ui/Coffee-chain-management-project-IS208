@@ -1,3 +1,10 @@
+target/
 *.class
 config.properties
-target/
+.idea/
+*.iml
+.vscode/
+.DS_Store
+*.log
+out/
+build/

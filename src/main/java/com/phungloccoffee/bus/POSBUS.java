@@ -93,10 +93,13 @@ public class POSBUS extends PermissionBUS {
             }
 
             BigDecimal quantity = detail.getSoLuong();
-            BigDecimal unitPrice = product.getGiaBan() == null ? BigDecimal.ZERO : product.getGiaBan();
-            BigDecimal lineTotal = unitPrice.multiply(quantity);
+            BigDecimal productPrice = product.getGiaBan() == null ? BigDecimal.ZERO : product.getGiaBan();
+            BigDecimal unitPrice = detail.getDonGia() == null || detail.getDonGia().compareTo(BigDecimal.ZERO) < 0
+                    ? productPrice
+                    : detail.getDonGia();
+            BigDecimal lineTotal = detail.getThanhTien() == null ? unitPrice.multiply(quantity) : detail.getThanhTien();
             total = total.add(lineTotal);
-            checkedDetails.add(new OrderDetail(
+            OrderDetail checkedDetail = new OrderDetail(
                     generateId("CT"),
                     null,
                     product.getSanPhamId(),
@@ -106,7 +109,9 @@ public class POSBUS extends PermissionBUS {
                     detail.getGhiChu(),
                     null,
                     null
-            ));
+            );
+            checkedDetail.setToppings(detail.getToppings());
+            checkedDetails.add(checkedDetail);
         }
 
         if (expectedTotal != null && total.compareTo(expectedTotal) != 0) {
@@ -155,7 +160,8 @@ public class POSBUS extends PermissionBUS {
                     detail.getSoLuong(),
                     nullToZero(detail.getDonGia()),
                     lineTotal,
-                    detail.getGhiChu()
+                    detail.getGhiChu(),
+                    detail.getToppings()
             ));
         }
 
