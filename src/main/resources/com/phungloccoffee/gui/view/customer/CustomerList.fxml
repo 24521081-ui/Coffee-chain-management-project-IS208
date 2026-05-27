@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
@@ -15,23 +16,19 @@
       styleClass="page-root">
     <HBox styleClass="filter-card report-controls-row">
         <TextField fx:id="searchField" promptText="Tìm tên, SĐT, email..." prefWidth="300" styleClass="page-input" />
-        <ComboBox fx:id="tierFilterComboBox" promptText="Hạng khách" prefWidth="170" styleClass="page-combo" />
-        <ComboBox fx:id="statusFilterComboBox" promptText="Trạng thái" prefWidth="150" styleClass="page-combo" />
+        <Button text="Tìm kiếm" onAction="#handleSearch" styleClass="secondary-button" />
+        <ComboBox fx:id="tierFilterComboBox" promptText="Hạng khách" prefWidth="190" styleClass="page-combo" />
         <Region HBox.hgrow="ALWAYS" />
     </HBox>
 
     <HBox styleClass="stats-row">
         <VBox HBox.hgrow="ALWAYS" styleClass="metric-card">
             <Label text="Tổng khách hàng" styleClass="metric-label" />
-            <Label text="1.284" styleClass="metric-value" />
-        </VBox>
-        <VBox HBox.hgrow="ALWAYS" styleClass="metric-card">
-            <Label text="Thành viên hoạt động" styleClass="metric-label" />
-            <Label text="936" styleClass="metric-value" />
+            <Label fx:id="totalCustomersLabel" text="0" styleClass="metric-value" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" styleClass="metric-card">
             <Label text="Khách mới tháng này" styleClass="metric-label" />
-            <Label text="74" styleClass="metric-value" />
+            <Label fx:id="newCustomersThisMonthLabel" text="0" styleClass="metric-value" />
         </VBox>
     </HBox>
 
@@ -46,11 +43,17 @@
                 <TableColumn fx:id="nameColumn" text="Khách hàng" prefWidth="190" />
                 <TableColumn fx:id="phoneColumn" text="Điện thoại" prefWidth="130" />
                 <TableColumn fx:id="emailColumn" text="Email" prefWidth="220" />
-                <TableColumn fx:id="tierColumn" text="Hạng" prefWidth="100" />
+                <TableColumn fx:id="tierColumn" text="Hạng" prefWidth="110" />
                 <TableColumn fx:id="pointsColumn" text="Điểm" prefWidth="90" />
-                <TableColumn fx:id="statusColumn" text="Trạng thái" prefWidth="130" />
-                <TableColumn fx:id="actionColumn" text="Thao tác" prefWidth="190" />
+                <TableColumn fx:id="actionColumn" text="Thao tác" prefWidth="140" />
             </columns>
         </TableView>
+        <HBox alignment="CENTER_RIGHT" spacing="12" styleClass="report-controls-row">
+            <Label fx:id="resultCountLabel" text="Tổng 0 khách hàng" styleClass="section-subtitle" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="previousPageButton" text="Previous Page" onAction="#handlePreviousPage" styleClass="secondary-button" />
+            <Label fx:id="pageInfoLabel" text="Trang 1 / 1" styleClass="section-subtitle" />
+            <Button fx:id="nextPageButton" text="Next Page" onAction="#handleNextPage" styleClass="primary-button" />
+        </HBox>
     </VBox>
 </VBox>

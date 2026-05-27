@@ -16,31 +16,42 @@
     <HBox styleClass="main-layout" VBox.vgrow="ALWAYS">
         <VBox styleClass="form-card" spacing="18" HBox.hgrow="ALWAYS">
             <VBox spacing="4">
-                <Label text="Thông tin thanh toán" styleClass="section-title" />
-                <Label text="Nhập hóa đơn và phương thức nhận tiền" styleClass="section-subtitle" />
+                <Label text="Thong tin thanh toan" styleClass="section-title" />
+                <Label text="Nhap hoa don va phuong thuc nhan tien" styleClass="section-subtitle" />
             </VBox>
             <GridPane hgap="16" vgap="14" styleClass="form-grid">
-                <Label text="Mã hóa đơn" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label" />
-                <TextField fx:id="orderIdField" promptText="Nhập ID hóa đơn" prefWidth="320" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="page-input" />
-                <Label text="Phương thức" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label" />
-                <ComboBox fx:id="methodComboBox" promptText="Chọn phương thức" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="page-combo" />
-                <Label text="Số tiền" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="field-label" />
+                <Label text="Ma hoa don" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label" />
+                <TextField fx:id="orderIdField" promptText="Nhap ID hoa don" prefWidth="320" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="page-input" />
+                <Label text="Phuong thuc" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label" />
+                <ComboBox fx:id="methodComboBox" promptText="Chon phuong thuc" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="page-combo" />
+                <Label text="So tien" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="field-label" />
                 <TextField fx:id="amountField" promptText="0" GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="page-input" />
             </GridPane>
             <HBox alignment="CENTER_RIGHT">
-                <Button text="Xác nhận thanh toán" onAction="#handlePayment" styleClass="primary-button" />
+                <Button fx:id="confirmPaymentButton" text="Xác nhận thanh toán" onAction="#handleConfirmPayment" styleClass="primary-button" />
             </HBox>
         </VBox>
 
         <VBox styleClass="info-card" spacing="16" prefWidth="360">
             <VBox spacing="4">
-                <Label text="Tóm tắt giao dịch" styleClass="section-title" />
-                <Label text="Đối soát nhanh trước khi xác nhận" styleClass="section-subtitle" />
+                <Label text="Tom tat giao dich" styleClass="section-title" />
+                <Label text="Doi soat nhanh truoc khi xac nhan" styleClass="section-subtitle" />
             </VBox>
             <VBox spacing="12">
-                <HBox><Label text="Trạng thái" styleClass="section-subtitle" /><Region HBox.hgrow="ALWAYS" /><Label text="Chờ thanh toán" styleClass="status-badge status-warning" /></HBox>
-                <HBox><Label text="Kênh bán" styleClass="section-subtitle" /><Region HBox.hgrow="ALWAYS" /><Label text="Tại quầy" styleClass="report-list-label" /></HBox>
-                <HBox><Label text="Gợi ý" styleClass="section-subtitle" /><Region HBox.hgrow="ALWAYS" /><Label text="Kiểm tra số tiền" styleClass="report-list-label" /></HBox>
+                <HBox>
+                    <Label text="Trang thai" styleClass="section-subtitle" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Label fx:id="statusLabel" text="Cho thanh toan" styleClass="status-badge status-warning" />
+                </HBox>
+                <HBox>
+                    <Label text="Tong tien" styleClass="section-subtitle" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Label fx:id="totalLabel" text="0" styleClass="report-list-label" />
+                </HBox>
+                <VBox spacing="6">
+                    <Label text="Mon hang" styleClass="section-subtitle" />
+                    <Label fx:id="itemsLabel" text="Chua tai hoa don" wrapText="true" styleClass="report-list-label" />
+                </VBox>
             </VBox>
         </VBox>
     </HBox>

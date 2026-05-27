@@ -22,6 +22,12 @@ public class InventoryBUS extends PermissionBUS {
         return inventoryDAO.findAll();
     }
 
+    public List<InventoryItem> loadBranchInventory(String branchId) throws DatabaseException, PermissionException, ValidationException {
+        requireRole("THU_NGAN", "NHAN_VIEN_KHO", "QUAN_LY_CHI_NHANH", "IT_ADMIN");
+        ValidationUtils.requireText(branchId, "Chi nhanh");
+        return inventoryDAO.findByBranch(branchId).getItems();
+    }
+
     public void createTransaction(String type, String branchName, List<WarehouseTransactionDetail> details) throws ValidationException, PermissionException, DatabaseException {
         requireRole("NHAN_VIEN_KHO", "QUAN_LY_CHI_NHANH");
         ValidationUtils.requireText(type, "Loại phiếu");

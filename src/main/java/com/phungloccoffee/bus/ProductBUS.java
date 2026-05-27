@@ -6,6 +6,7 @@ import com.phungloccoffee.exception.PermissionException;
 import com.phungloccoffee.exception.ValidationException;
 import com.phungloccoffee.model.Product;
 import com.phungloccoffee.model.ProductCategory;
+import com.phungloccoffee.offline.ProductCache;
 import com.phungloccoffee.util.ValidationUtils;
 
 import java.math.BigDecimal;
@@ -13,10 +14,26 @@ import java.util.List;
 
 public class ProductBUS extends PermissionBUS {
     private final ProductDAO productDAO = new ProductDAO();
+    private final ProductCache productCache = ProductCache.getInstance();
 
     public List<Product> loadProducts() throws DatabaseException, PermissionException {
         requireRole("QUAN_LY_CHI_NHANH", "IT_ADMIN");
         return productDAO.findAll();
+    }
+
+    public List<Product> getProductsForPOS(String branchId) throws DatabaseException, PermissionException {
+        requireRole("THU_NGAN", "QUAN_LY_CHI_NHANH", "IT_ADMIN");
+        try {
+            List<Product> products = productDAO.findProductsForPOS();
+            productCache.save(products);
+            return products;
+        } catch (DatabaseException e) {
+            List<Product> cachedProducts = productCache.load();
+            if (!cachedProducts.isEmpty()) {
+                return cachedProducts;
+            }
+            throw e;
+        }
     }
 
     public List<ProductCategory> loadCategories() throws DatabaseException, PermissionException {

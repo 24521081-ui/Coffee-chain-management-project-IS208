@@ -1,18 +1,36 @@
 @echo off
-chcp 65001
-echo ==========================================
-echo Running Phung Loc Coffee JavaFX App
-echo ==========================================
+chcp 65001 > nul
 
-set JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8
+cd /d "%~dp0"
 
-where mvn >nul 2>nul
-if %errorlevel%==0 (
-    call mvn clean javafx:run
-) else if exist mvnw.cmd (
-    call mvnw.cmd clean javafx:run
-) else (
-    echo Maven is not installed and Maven Wrapper is not available.
+echo ================================
+echo Current folder:
+echo %cd%
+echo ================================
+
+call "D:\Download\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin\mvn.cmd" clean compile -e
+
+if errorlevel 1 (
+    echo.
+    echo Compile failed. Vui long xem loi phia tren.
+    pause
+    exit /b 1
 )
+
+if not exist "target\classes\com\phungloccoffee\MainApp.class" (
+    echo.
+    echo Khong tim thay file:
+    echo target\classes\com\phungloccoffee\MainApp.class
+    echo.
+    echo Nghia la MainApp.java chua duoc bien dich thanh MainApp.class.
+    pause
+    exit /b 1
+)
+
+echo.
+echo Tim thay MainApp.class. Dang chay JavaFX...
+echo.
+
+call "D:\Download\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin\mvn.cmd" javafx:run -e
 
 pause

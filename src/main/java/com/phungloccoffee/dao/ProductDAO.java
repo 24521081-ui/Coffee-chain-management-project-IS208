@@ -19,33 +19,52 @@ public class ProductDAO {
         return findAllActive();
     }
 
+    public List<Product> findProductsForPOS() throws DatabaseException {
+        String sql = """
+                SELECT sp.san_pham_id, sp.danh_muc_id, dm.ten_danh_muc, sp.ten_san_pham,
+                       sp.loai_san_pham, sp.don_vi_tinh, sp.gia_ban, sp.gia_von,
+                       sp.trang_thai, sp.created_at, sp.updated_at
+                FROM san_pham sp
+                LEFT JOIN danh_muc_san_pham dm ON dm.danh_muc_id = sp.danh_muc_id
+                WHERE sp.loai_san_pham = 'THANH_PHAM'
+                ORDER BY dm.ten_danh_muc, sp.ten_san_pham
+                """;
+        return findProducts(sql, null);
+    }
+
     public List<Product> findAllActive() throws DatabaseException {
         String sql = """
-                SELECT san_pham_id, danh_muc_id, ten_san_pham, loai_san_pham, don_vi_tinh,
-                       gia_ban, gia_von, trang_thai, created_at, updated_at
-                FROM san_pham
-                WHERE loai_san_pham = 'THANH_PHAM' AND trang_thai = 1
-                ORDER BY ten_san_pham
+                SELECT sp.san_pham_id, sp.danh_muc_id, dm.ten_danh_muc, sp.ten_san_pham,
+                       sp.loai_san_pham, sp.don_vi_tinh, sp.gia_ban, sp.gia_von,
+                       sp.trang_thai, sp.created_at, sp.updated_at
+                FROM san_pham sp
+                LEFT JOIN danh_muc_san_pham dm ON dm.danh_muc_id = sp.danh_muc_id
+                WHERE sp.loai_san_pham = 'THANH_PHAM' AND sp.trang_thai = 1
+                ORDER BY sp.ten_san_pham
                 """;
         return findProducts(sql, null);
     }
 
     public List<Product> findAll() throws DatabaseException {
         String sql = """
-                SELECT san_pham_id, danh_muc_id, ten_san_pham, loai_san_pham, don_vi_tinh,
-                       gia_ban, gia_von, trang_thai, created_at, updated_at
-                FROM san_pham
-                ORDER BY ten_san_pham
+                SELECT sp.san_pham_id, sp.danh_muc_id, dm.ten_danh_muc, sp.ten_san_pham,
+                       sp.loai_san_pham, sp.don_vi_tinh, sp.gia_ban, sp.gia_von,
+                       sp.trang_thai, sp.created_at, sp.updated_at
+                FROM san_pham sp
+                LEFT JOIN danh_muc_san_pham dm ON dm.danh_muc_id = sp.danh_muc_id
+                ORDER BY sp.ten_san_pham
                 """;
         return findProducts(sql, null);
     }
 
     public Optional<Product> findById(String sanPhamId) throws DatabaseException {
         String sql = """
-                SELECT san_pham_id, danh_muc_id, ten_san_pham, loai_san_pham, don_vi_tinh,
-                       gia_ban, gia_von, trang_thai, created_at, updated_at
-                FROM san_pham
-                WHERE san_pham_id = ?
+                SELECT sp.san_pham_id, sp.danh_muc_id, dm.ten_danh_muc, sp.ten_san_pham,
+                       sp.loai_san_pham, sp.don_vi_tinh, sp.gia_ban, sp.gia_von,
+                       sp.trang_thai, sp.created_at, sp.updated_at
+                FROM san_pham sp
+                LEFT JOIN danh_muc_san_pham dm ON dm.danh_muc_id = sp.danh_muc_id
+                WHERE sp.san_pham_id = ?
                 """;
         List<Product> products = findProducts(sql, sanPhamId);
         return products.stream().findFirst();
@@ -171,6 +190,7 @@ public class ProductDAO {
         return new Product(
                 rs.getString("san_pham_id"),
                 rs.getString("danh_muc_id"),
+                readOptionalString(rs, "ten_danh_muc"),
                 rs.getString("ten_san_pham"),
                 rs.getString("loai_san_pham"),
                 rs.getString("don_vi_tinh"),
@@ -180,6 +200,14 @@ public class ProductDAO {
                 toLocalDateTime(rs.getTimestamp("created_at")),
                 toLocalDateTime(rs.getTimestamp("updated_at"))
         );
+    }
+
+    private String readOptionalString(ResultSet rs, String columnName) {
+        try {
+            return rs.getString(columnName);
+        } catch (SQLException ignored) {
+            return null;
+        }
     }
 
     private java.time.LocalDateTime toLocalDateTime(Timestamp timestamp) {
