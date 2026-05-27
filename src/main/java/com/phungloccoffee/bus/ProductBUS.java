@@ -17,7 +17,7 @@ public class ProductBUS extends PermissionBUS {
     private final ProductCache productCache = ProductCache.getInstance();
 
     public List<Product> loadProducts() throws DatabaseException, PermissionException {
-        requireRole("QUAN_LY_CHI_NHANH", "IT_ADMIN");
+        requireProductManagerRole();
         return productDAO.findAll();
     }
 
@@ -37,12 +37,12 @@ public class ProductBUS extends PermissionBUS {
     }
 
     public List<ProductCategory> loadCategories() throws DatabaseException, PermissionException {
-        requireRole("QUAN_LY_CHI_NHANH", "IT_ADMIN");
+        requireProductManagerRole();
         return productDAO.findCategories();
     }
 
     public void saveProduct(Product product) throws ValidationException, PermissionException, DatabaseException {
-        requireRole("QUAN_LY_CHI_NHANH", "IT_ADMIN");
+        requireProductManagerRole();
         ValidationUtils.requireText(product.getCode(), "Mã sản phẩm");
         ValidationUtils.requireText(product.getName(), "Tên sản phẩm");
         if (!isValidProductType(product.getLoaiSanPham())) {
@@ -51,10 +51,41 @@ public class ProductBUS extends PermissionBUS {
         if (!isValidUnit(product.getDonViTinh())) {
             throw new ValidationException("Đơn vị tính không hợp lệ.");
         }
-        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) < 0) {
-            throw new ValidationException("Giá bán không hợp lệ.");
+        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidationException("Giá bán phải là số lớn hơn 0.");
         }
         productDAO.save(product);
+    }
+
+    public void updateProductInfo(Product product) throws ValidationException, PermissionException, DatabaseException {
+        requireProductManagerRole();
+        ValidationUtils.requireText(product.getCode(), "Mã sản phẩm");
+        ValidationUtils.requireText(product.getName(), "Tên sản phẩm");
+        productDAO.updateInfo(product);
+    }
+
+    public void updateProductPrice(String productCode, BigDecimal price)
+            throws ValidationException, PermissionException, DatabaseException {
+        requireProductManagerRole();
+        ValidationUtils.requireText(productCode, "Mã sản phẩm");
+        if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidationException("Giá bán phải là số lớn hơn 0.");
+        }
+        productDAO.updatePrice(productCode, price);
+    }
+
+    public void updateProductStatus(String productCode, int status)
+            throws ValidationException, PermissionException, DatabaseException {
+        requireProductManagerRole();
+        ValidationUtils.requireText(productCode, "Mã sản phẩm");
+        if (status != 0 && status != 1) {
+            throw new ValidationException("Trạng thái không hợp lệ.");
+        }
+        productDAO.updateStatus(productCode, status);
+    }
+
+    private void requireProductManagerRole() throws PermissionException {
+        requireRole("BAN_GIAM_DOC", "QUAN_LY_CHI_NHANH", "IT_ADMIN");
     }
 
     private boolean isValidProductType(String value) {

@@ -1,6 +1,7 @@
 package com.phungloccoffee.gui.controller.inventory;
 
 import com.phungloccoffee.util.AlertUtils;
+import com.phungloccoffee.util.AutoCodeGenerator;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -21,6 +22,8 @@ import javafx.util.converter.DoubleStringConverter;
 
 import java.text.NumberFormat;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class WarehouseFormController {
@@ -50,10 +53,12 @@ public class WarehouseFormController {
     private final ObservableList<MaterialRow> materials = FXCollections.observableArrayList();
     private final ObservableList<ImportDetailRow> details = FXCollections.observableArrayList();
     private final NumberFormat currencyFormat = NumberFormat.getInstance(new Locale("vi", "VN"));
+    private final List<String> savedReceiptCodes = new ArrayList<>();
 
     @FXML
     private void initialize() {
         receiptDatePicker.setValue(LocalDate.now());
+        setupAutoCodeField();
         supplierComboBox.getItems().setAll("Công ty cà phê Phụng Lộc", "Vinamilk", "Bao bì An Phát", "Sweet Syrup Việt Nam");
         supplierComboBox.getSelectionModel().selectFirst();
 
@@ -99,6 +104,13 @@ public class WarehouseFormController {
         );
     }
 
+    private void setupAutoCodeField() {
+        savedReceiptCodes.addAll(List.of("PN001", "PN002"));
+        receiptCodeField.setEditable(false);
+        receiptCodeField.getStyleClass().add("readonly-code-field");
+        receiptCodeField.setText(nextReceiptCode());
+    }
+
     @FXML
     private void handleAddSelectedMaterial() {
         MaterialRow selected = materialTable.getSelectionModel().getSelectedItem();
@@ -121,7 +133,8 @@ public class WarehouseFormController {
 
     @FXML
     private void saveDraft() {
-        AlertUtils.showInfo("Đã lưu nháp phiếu nhập kho.");
+        String code = consumeReceiptCode();
+        AlertUtils.showInfo("Đã lưu nháp phiếu nhập kho " + code + ".");
     }
 
     @FXML
@@ -130,7 +143,8 @@ public class WarehouseFormController {
             AlertUtils.showWarning("Vui lòng thêm ít nhất một nguyên liệu vào phiếu nhập.");
             return;
         }
-        AlertUtils.showInfo("Đã lưu phiếu nhập kho trên giao diện.");
+        String code = consumeReceiptCode();
+        AlertUtils.showInfo("Đã lưu phiếu nhập kho " + code + " trên giao diện.");
     }
 
     @FXML
@@ -139,6 +153,17 @@ public class WarehouseFormController {
         updateTotal();
         noteArea.clear();
         attachmentField.clear();
+    }
+
+    private String consumeReceiptCode() {
+        String code = nextReceiptCode();
+        savedReceiptCodes.add(code);
+        receiptCodeField.setText(nextReceiptCode());
+        return code;
+    }
+
+    private String nextReceiptCode() {
+        return AutoCodeGenerator.generateNextCode("PN", savedReceiptCodes);
     }
 
     private void updateTotal() {

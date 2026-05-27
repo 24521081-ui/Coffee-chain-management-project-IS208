@@ -145,6 +145,35 @@ public class ProductDAO {
         }
     }
 
+    public void updateInfo(Product sp) throws DatabaseException {
+        String sql = """
+                UPDATE san_pham
+                SET danh_muc_id = ?, ten_san_pham = ?, updated_at = SYSTIMESTAMP
+                WHERE san_pham_id = ?
+                """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, sp.getDanhMucId());
+            stmt.setString(2, sp.getTenSanPham());
+            stmt.setString(3, sp.getSanPhamId());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DatabaseException("Không thể cập nhật thông tin sản phẩm.", e);
+        }
+    }
+
+    public void updatePrice(String sanPhamId, java.math.BigDecimal price) throws DatabaseException {
+        String sql = "UPDATE san_pham SET gia_ban = ?, updated_at = SYSTIMESTAMP WHERE san_pham_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setBigDecimal(1, price);
+            stmt.setString(2, sanPhamId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DatabaseException("Không thể cập nhật giá bán sản phẩm.", e);
+        }
+    }
+
     public void updateStatus(String sanPhamId, int status) throws DatabaseException {
         String sql = "UPDATE san_pham SET trang_thai = ?, updated_at = SYSTIMESTAMP WHERE san_pham_id = ?";
         try (Connection conn = DBConnection.getConnection();

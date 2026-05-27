@@ -44,7 +44,6 @@ public final class MenuConfig {
                     item("INVENTORY_REPORT", "Báo cáo tồn kho", "▦", "Báo cáo > Tồn kho", "Báo cáo tồn kho", "/com/phungloccoffee/gui/view/report/InventoryReport.fxml"),
                     item("BEST_SELLER_REPORT", "Mặt hàng bán chạy", "★", "Báo cáo > Mặt hàng bán chạy", "Mặt hàng bán chạy", "/com/phungloccoffee/gui/view/report/BestSellerReport.fxml"),
                     item("PRODUCT_MANAGEMENT", "Quản lý sản phẩm / menu", "▤", "Menu > Sản phẩm", "Quản lý sản phẩm / menu", "/com/phungloccoffee/gui/view/ProductManagement.fxml"),
-                    item("PRODUCT_RECIPE", "Quản lý định mức sản phẩm", "◇", "Menu > Định mức sản phẩm", "Quản lý định mức sản phẩm", "/com/phungloccoffee/gui/view/product/ProductRecipe.fxml"),
                     item("BRANCH_MANAGEMENT", "Quản lý chi nhánh", "⌂", "Hệ thống > Chi nhánh", "Quản lý chi nhánh", "/com/phungloccoffee/gui/view/branch/BranchManagement.fxml")
             );
             case IT_ADMIN -> List.of(

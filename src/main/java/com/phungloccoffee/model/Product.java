@@ -78,7 +78,11 @@ public class Product implements Serializable {
     public BigDecimal getPrice() { return giaBan; }
     public void setPrice(BigDecimal price) { this.giaBan = price; }
     public String getStatus() { return trangThai == 1 ? "Đang hoạt động" : "Ngừng bán"; }
-    public void setStatus(String status) { this.trangThai = "1".equals(status) || "ACTIVE".equalsIgnoreCase(status) ? 1 : 0; }
+    public void setStatus(String status) {
+        this.trangThai = "1".equals(status)
+                || "ACTIVE".equalsIgnoreCase(status)
+                || "Đang hoạt động".equalsIgnoreCase(status) ? 1 : 0;
+    }
 
     @Override
     public String toString() {

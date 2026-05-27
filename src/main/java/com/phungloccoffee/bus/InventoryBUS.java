@@ -8,6 +8,7 @@ import com.phungloccoffee.exception.ValidationException;
 import com.phungloccoffee.model.InventoryItem;
 import com.phungloccoffee.model.WarehouseTransaction;
 import com.phungloccoffee.model.WarehouseTransactionDetail;
+import com.phungloccoffee.util.AutoCodeGenerator;
 import com.phungloccoffee.util.ValidationUtils;
 
 import java.time.LocalDateTime;
@@ -35,7 +36,22 @@ public class InventoryBUS extends PermissionBUS {
         if (details == null || details.isEmpty()) {
             throw new ValidationException("Phiếu kho chưa có nguyên liệu.");
         }
-        WarehouseTransaction transaction = new WarehouseTransaction(0, "WH" + System.currentTimeMillis(), type, branchName, "NHAP", 0, LocalDateTime.now());
+        WarehouseTransaction transaction = new WarehouseTransaction(0, nextTransactionCode(type), type, branchName, "NHAP", 0, LocalDateTime.now());
         transactionDAO.create(transaction, details);
+    }
+
+    private String nextTransactionCode(String type) throws DatabaseException {
+        return AutoCodeGenerator.generateNextCode(prefixFor(type), transactionDAO.findTransactionCodes());
+    }
+
+    private String prefixFor(String type) {
+        String normalizedType = type == null ? "" : type.trim().toUpperCase();
+        if (normalizedType.contains("NHAP") || normalizedType.contains("IMPORT")) {
+            return "PN";
+        }
+        if (normalizedType.contains("DIEU") || normalizedType.contains("TRANSFER") || normalizedType.contains("DC")) {
+            return "DC";
+        }
+        return "PX";
     }
 }

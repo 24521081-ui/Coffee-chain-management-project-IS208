@@ -6,37 +6,45 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx/21"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.phungloccoffee.gui.controller.product.ProductManagementController"
-      styleClass="page-root">
-    <HBox styleClass="main-layout" VBox.vgrow="ALWAYS">
-        <VBox spacing="18" HBox.hgrow="ALWAYS" styleClass="table-card">
-            <VBox spacing="4">
-                <Label text="Danh sách sản phẩm" styleClass="section-title" />
-                <Label text="Menu bán hàng và trạng thái kinh doanh" styleClass="section-subtitle" />
+<VBox styleClass="page-root product-management-root" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.phungloccoffee.gui.controller.product.ProductManagementController">
+    <VBox spacing="16" styleClass="table-card product-list-card product-list-card-full" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="16" styleClass="product-card-heading">
+            <VBox alignment="CENTER_LEFT" spacing="4">
+                <Label styleClass="section-title" text="Danh sách sản phẩm" />
+                <Label styleClass="section-subtitle" text="Menu bán hàng, giá bán và trạng thái kinh doanh" />
             </VBox>
-            <TableView fx:id="productTable" prefHeight="540" VBox.vgrow="ALWAYS" styleClass="page-table">
-                <columns>
-                    <TableColumn fx:id="codeColumn" text="Mã" prefWidth="120" />
-                    <TableColumn fx:id="nameColumn" text="Tên sản phẩm" prefWidth="240" />
-                    <TableColumn fx:id="priceColumn" text="Giá" prefWidth="140" />
-                    <TableColumn fx:id="statusColumn" text="Trạng thái" prefWidth="130" />
-                </columns>
-            </TableView>
-        </VBox>
-        <VBox spacing="14" styleClass="form-card" prefWidth="360">
-            <VBox spacing="4">
-                <Label text="Thông tin sản phẩm" styleClass="section-title" />
-                <Label text="Cập nhật mã, tên và giá bán" styleClass="section-subtitle" />
-            </VBox>
-            <TextField fx:id="codeField" promptText="Mã sản phẩm" styleClass="page-input" />
-            <TextField fx:id="nameField" promptText="Tên sản phẩm" styleClass="page-input" />
-            <TextField fx:id="priceField" promptText="Giá bán" styleClass="page-input" />
-            <Button text="Lưu sản phẩm" onAction="#saveProduct" styleClass="primary-button" />
-            <Button text="Tải lại" onAction="#loadProducts" styleClass="secondary-button" />
-        </VBox>
-    </HBox>
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="addProductButton" onAction="#showAddProductDialog" styleClass="primary-action-button product-add-button" text="+ Thêm sản phẩm" />
+        </HBox>
+
+        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="product-search-bar">
+            <TextField fx:id="searchField" maxWidth="480" prefWidth="390" promptText="Tìm kiếm sản phẩm theo mã hoặc tên" styleClass="page-input product-search-input" HBox.hgrow="SOMETIMES" />
+            <Button onAction="#applySearchFilter" styleClass="secondary-action-button product-filter-button" text="Tìm kiếm" />
+            <Button onAction="#clearFilter" styleClass="secondary-action-button product-filter-button" text="Xóa lọc" />
+            <Region HBox.hgrow="ALWAYS" />
+        </HBox>
+
+        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="product-toolbar-row">
+            <Label fx:id="resultCountLabel" styleClass="product-result-count" text="Hiển thị 0/0 sản phẩm" />
+            <Region HBox.hgrow="ALWAYS" />
+            <HBox alignment="CENTER" spacing="8" styleClass="product-action-group">
+                <Button fx:id="detailButton" onAction="#showProductDetails" styleClass="soft-outline-button product-row-action-button" text="Xem chi tiết" />
+                <Button fx:id="recipeButton" onAction="#showRecipeDialog" styleClass="secondary-action-button product-row-action-button" text="Cập nhật định mức" />
+                <Button fx:id="editButton" onAction="#showUpdateProductDialog" styleClass="secondary-action-button product-row-action-button" text="Cập nhật thông tin" />
+            </HBox>
+        </HBox>
+
+        <TableView fx:id="productTable" styleClass="page-table product-table-wide" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="codeColumn" prefWidth="150" text="Mã sản phẩm" />
+                <TableColumn fx:id="nameColumn" prefWidth="340" text="Tên sản phẩm" />
+                <TableColumn fx:id="priceColumn" prefWidth="155" text="Giá" />
+                <TableColumn fx:id="statusColumn" prefWidth="185" text="Trạng thái" />
+                <TableColumn fx:id="recipeStatusColumn" prefWidth="145" text="Định mức" />
+            </columns>
+        </TableView>
+    </VBox>
 </VBox>

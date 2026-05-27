@@ -1,6 +1,7 @@
 package com.phungloccoffee.gui.controller.inventory;
 
 import com.phungloccoffee.util.AlertUtils;
+import com.phungloccoffee.util.AutoCodeGenerator;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -20,6 +21,8 @@ import javafx.scene.layout.HBox;
 import javafx.util.converter.DoubleStringConverter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ExportFormController {
     @FXML private TextField exportCodeField;
@@ -48,10 +51,12 @@ public class ExportFormController {
 
     private final ObservableList<MaterialRow> materials = FXCollections.observableArrayList();
     private final ObservableList<ExportDetailRow> details = FXCollections.observableArrayList();
+    private final List<String> submittedExportCodes = new ArrayList<>();
 
     @FXML
     private void initialize() {
         exportDatePicker.setValue(LocalDate.now());
+        setupAutoCodeField();
         reasonComboBox.getItems().setAll("Bổ sung ca bán", "Chuyển quầy pha chế", "Hư hỏng", "Điều chuyển nội bộ");
         reasonComboBox.getSelectionModel().selectFirst();
 
@@ -98,6 +103,13 @@ public class ExportFormController {
         );
     }
 
+    private void setupAutoCodeField() {
+        submittedExportCodes.addAll(List.of("PX001", "PX002"));
+        exportCodeField.setEditable(false);
+        exportCodeField.getStyleClass().add("readonly-code-field");
+        exportCodeField.setText(nextExportCode());
+    }
+
     @FXML
     private void handleAddSelectedMaterial() {
         MaterialRow selected = materialTable.getSelectionModel().getSelectedItem();
@@ -120,7 +132,8 @@ public class ExportFormController {
 
     @FXML
     private void saveDraft() {
-        AlertUtils.showInfo("Đã lưu nháp phiếu xuất kho.");
+        String code = consumeExportCode();
+        AlertUtils.showInfo("Đã lưu nháp phiếu xuất kho " + code + ".");
     }
 
     @FXML
@@ -134,7 +147,8 @@ public class ExportFormController {
             AlertUtils.showError("Không thể gửi duyệt vì có dòng Không đủ tồn.");
             return;
         }
-        AlertUtils.showInfo("Đã gửi duyệt phiếu xuất kho trên giao diện.");
+        String code = consumeExportCode();
+        AlertUtils.showInfo("Đã gửi duyệt phiếu xuất kho " + code + " trên giao diện.");
     }
 
     @FXML
@@ -142,6 +156,17 @@ public class ExportFormController {
         details.clear();
         noteArea.clear();
         attachmentField.clear();
+    }
+
+    private String consumeExportCode() {
+        String code = nextExportCode();
+        submittedExportCodes.add(code);
+        exportCodeField.setText(nextExportCode());
+        return code;
+    }
+
+    private String nextExportCode() {
+        return AutoCodeGenerator.generateNextCode("PX", submittedExportCodes);
     }
 
     private String quantityText(double value, String unit) {

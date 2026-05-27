@@ -1,5 +1,8 @@
 package com.phungloccoffee.gui.controller.product;
 
+import com.phungloccoffee.gui.service.ProductCatalogService;
+import com.phungloccoffee.model.product.ProductCatalogModels.RecipeDisplayRow;
+import com.phungloccoffee.util.AlertUtils;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -21,9 +24,17 @@ public class ProductRecipeController {
     @FXML private TableColumn<RecipeRow, String> unitColumn;
     @FXML private TableColumn<RecipeRow, String> statusColumn;
 
+    private final ProductCatalogService productCatalogService = new ProductCatalogService();
+
     @FXML
     private void initialize() {
-        categoryComboBox.getItems().setAll("Tất cả nhóm", "Cà phê", "Trà", "Bánh");
+        categoryComboBox.getItems().setAll("Tất cả nhóm");
+        try {
+            categoryComboBox.getItems().addAll(productCatalogService.loadPosCategories());
+        } catch (Exception e) {
+            AlertUtils.showError("Không thể tải danh mục sản phẩm từ cơ sở dữ liệu.");
+            e.printStackTrace();
+        }
         statusComboBox.getItems().setAll("Tất cả trạng thái", "Đang áp dụng", "Cần rà soát");
         categoryComboBox.getSelectionModel().selectFirst();
         statusComboBox.getSelectionModel().selectFirst();
@@ -36,14 +47,23 @@ public class ProductRecipeController {
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
         statusColumn.setCellFactory(column -> new StatusCell<>());
         recipeTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        recipeTable.setItems(FXCollections.observableArrayList(
-                new RecipeRow("SP001", "Cà phê sữa", "Cà phê rang xay", "18", "g", "Đang áp dụng"),
-                new RecipeRow("SP001", "Cà phê sữa", "Sữa đặc", "25", "ml", "Đang áp dụng"),
-                new RecipeRow("SP002", "Bạc xỉu", "Sữa tươi", "80", "ml", "Đang áp dụng"),
-                new RecipeRow("SP003", "Latte đá", "Espresso blend", "20", "g", "Đang áp dụng"),
-                new RecipeRow("SP004", "Matcha latte", "Bột matcha", "12", "g", "Cần rà soát"),
-                new RecipeRow("SP005", "Trà đào cam sả", "Syrup đào", "18", "ml", "Đang áp dụng")
-        ));
+        loadRecipes();
+    }
+
+    private void loadRecipes() {
+        try {
+            recipeTable.setItems(FXCollections.observableArrayList(productCatalogService.loadRecipeDisplayRows().stream()
+                    .map(this::toRecipeRow)
+                    .toList()));
+        } catch (Exception e) {
+            recipeTable.setItems(FXCollections.observableArrayList());
+            AlertUtils.showError("Không thể tải định mức sản phẩm từ cơ sở dữ liệu.");
+            e.printStackTrace();
+        }
+    }
+
+    private RecipeRow toRecipeRow(RecipeDisplayRow row) {
+        return new RecipeRow(row.productCode(), row.productName(), row.material(), row.quantity(), row.unit(), row.status());
     }
 
     private static class StatusCell<T> extends TableCell<T, String> {
