@@ -1,6 +1,12 @@
 package com.phungloccoffee.gui.controller.pos;
 
+import com.phungloccoffee.model.offline.OfflineOrder;
+import com.phungloccoffee.offline.OfflineStorage;
+import com.phungloccoffee.offline.SyncService;
 import com.phungloccoffee.util.AlertUtils;
+import com.phungloccoffee.util.CurrencyFormatter;
+import com.phungloccoffee.util.SessionManager;
+
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -13,9 +19,17 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
 public class OfflineTransactionController {
+    private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
     @FXML private ComboBox<String> syncStatusComboBox;
     @FXML private ComboBox<String> deviceComboBox;
+    @FXML private Label pendingCountLabel;
+    @FXML private Label syncedCountLabel;
+    @FXML private Label failedCountLabel;
     @FXML private TableView<OfflineRow> offlineTable;
     @FXML private TableColumn<OfflineRow, String> transactionColumn;
     @FXML private TableColumn<OfflineRow, String> deviceColumn;
@@ -23,12 +37,16 @@ public class OfflineTransactionController {
     @FXML private TableColumn<OfflineRow, String> amountColumn;
     @FXML private TableColumn<OfflineRow, String> timeColumn;
     @FXML private TableColumn<OfflineRow, String> statusColumn;
+    @FXML private TableColumn<OfflineRow, String> errorColumn;
     @FXML private TableColumn<OfflineRow, Void> actionColumn;
+
+    private final OfflineStorage offlineStorage = OfflineStorage.getInstance();
+    private final SyncService syncService = new SyncService();
 
     @FXML
     private void initialize() {
-        syncStatusComboBox.getItems().setAll("Tất cả trạng thái", "Chờ đồng bộ", "Đang đồng bộ", "Lỗi");
-        deviceComboBox.getItems().setAll("Tất cả thiết bị", "POS001", "POS002", "POS008");
+        syncStatusComboBox.getItems().setAll("Tat ca trang thai", OfflineOrder.SYNC_PENDING, OfflineOrder.SYNC_SYNCED, OfflineOrder.SYNC_FAILED);
+        deviceComboBox.getItems().setAll("Tat ca chi nhanh");
         syncStatusComboBox.getSelectionModel().selectFirst();
         deviceComboBox.getSelectionModel().selectFirst();
 
@@ -38,20 +56,63 @@ public class OfflineTransactionController {
         amountColumn.setCellValueFactory(new PropertyValueFactory<>("amount"));
         timeColumn.setCellValueFactory(new PropertyValueFactory<>("time"));
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        errorColumn.setCellValueFactory(new PropertyValueFactory<>("lastError"));
         statusColumn.setCellFactory(column -> new StatusCell<>());
         actionColumn.setCellFactory(column -> new ActionCell());
         offlineTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        offlineTable.setItems(FXCollections.observableArrayList(
-                new OfflineRow("OFF001", "POS001", "Nguyễn Thu Ngân", "185.000đ", "09:12 hôm nay", "Chờ đồng bộ"),
-                new OfflineRow("OFF002", "POS002", "Trần Minh", "240.000đ", "09:25 hôm nay", "Đang đồng bộ"),
-                new OfflineRow("OFF003", "POS008", "Lê Hoàng", "128.000đ", "10:04 hôm nay", "Chờ đồng bộ"),
-                new OfflineRow("OFF004", "POS001", "Nguyễn Thu Ngân", "315.000đ", "10:21 hôm nay", "Lỗi")
-        ));
+        syncStatusComboBox.setOnAction(event -> loadOfflineOrders());
+        loadOfflineOrders();
     }
 
     @FXML
     private void syncSelected() {
-        AlertUtils.showInfo("Đã gửi yêu cầu đồng bộ giao dịch offline.");
+        try {
+            int synced = syncService.syncPending(SessionManager.getCurrentBranchId());
+            AlertUtils.showInfo("Da dong bo " + synced + " giao dich offline.");
+            loadOfflineOrders();
+        } catch (Exception e) {
+            AlertUtils.showError(e.getMessage());
+            loadOfflineOrders();
+        }
+    }
+
+    private void loadOfflineOrders() {
+        try {
+            List<OfflineOrder> orders = offlineStorage.loadAll();
+            updateStats(orders);
+            String selectedStatus = syncStatusComboBox.getValue();
+            List<OfflineRow> rows = orders.stream()
+                    .filter(order -> selectedStatus == null
+                            || selectedStatus.startsWith("Tat ca")
+                            || selectedStatus.equals(order.getSyncStatus()))
+                    .map(this::toRow)
+                    .toList();
+            offlineTable.setItems(FXCollections.observableArrayList(rows));
+        } catch (Exception e) {
+            offlineTable.setItems(FXCollections.observableArrayList());
+            AlertUtils.showError(e.getMessage());
+        }
+    }
+
+    private void updateStats(List<OfflineOrder> orders) {
+        long pending = orders.stream().filter(order -> OfflineOrder.SYNC_PENDING.equals(order.getSyncStatus())).count();
+        long synced = orders.stream().filter(order -> OfflineOrder.SYNC_SYNCED.equals(order.getSyncStatus())).count();
+        long failed = orders.stream().filter(order -> OfflineOrder.SYNC_FAILED.equals(order.getSyncStatus())).count();
+        pendingCountLabel.setText(String.valueOf(pending));
+        syncedCountLabel.setText(String.valueOf(synced));
+        failedCountLabel.setText(String.valueOf(failed));
+    }
+
+    private OfflineRow toRow(OfflineOrder order) {
+        return new OfflineRow(
+                order.getLocalOrderId(),
+                order.getBranchId(),
+                order.getCashierName(),
+                CurrencyFormatter.format(order.getTotalAmount()),
+                order.getCreatedAt() == null ? "" : order.getCreatedAt().format(DATE_TIME_FORMAT),
+                order.getSyncStatus(),
+                order.getLastError() == null ? "" : order.getLastError()
+        );
     }
 
     private static class StatusCell<T> extends TableCell<T, String> {
@@ -65,9 +126,9 @@ public class OfflineTransactionController {
             }
             Label badge = new Label(status);
             badge.getStyleClass().addAll("status-badge", switch (status) {
-                case "Chờ đồng bộ" -> "status-warning";
-                case "Đang đồng bộ" -> "status-info";
-                default -> "status-danger";
+                case OfflineOrder.SYNC_SYNCED -> "status-success";
+                case OfflineOrder.SYNC_FAILED -> "status-danger";
+                default -> "status-warning";
             });
             setGraphic(badge);
             setText(null);
@@ -75,16 +136,15 @@ public class OfflineTransactionController {
         }
     }
 
-    private static class ActionCell extends TableCell<OfflineRow, Void> {
+    private class ActionCell extends TableCell<OfflineRow, Void> {
         private final HBox box = new HBox(8);
-        private final Button viewButton = new Button("Xem");
-        private final Button syncButton = new Button("Đồng bộ");
+        private final Button syncButton = new Button("Dong bo");
 
         ActionCell() {
-            viewButton.getStyleClass().addAll("action-button", "action-view-button");
             syncButton.getStyleClass().addAll("action-button", "action-approve-button");
+            syncButton.setOnAction(event -> syncSelected());
             box.setAlignment(Pos.CENTER_LEFT);
-            box.getChildren().addAll(viewButton, syncButton);
+            box.getChildren().add(syncButton);
         }
 
         @Override
@@ -101,38 +161,25 @@ public class OfflineTransactionController {
         private final String amount;
         private final String time;
         private final String status;
+        private final String lastError;
 
-        public OfflineRow(String transactionCode, String device, String cashier, String amount, String time, String status) {
+        public OfflineRow(String transactionCode, String device, String cashier, String amount,
+                          String time, String status, String lastError) {
             this.transactionCode = transactionCode;
             this.device = device;
             this.cashier = cashier;
             this.amount = amount;
             this.time = time;
             this.status = status;
+            this.lastError = lastError;
         }
 
-        public String getTransactionCode() {
-            return transactionCode;
-        }
-
-        public String getDevice() {
-            return device;
-        }
-
-        public String getCashier() {
-            return cashier;
-        }
-
-        public String getAmount() {
-            return amount;
-        }
-
-        public String getTime() {
-            return time;
-        }
-
-        public String getStatus() {
-            return status;
-        }
+        public String getTransactionCode() { return transactionCode; }
+        public String getDevice() { return device; }
+        public String getCashier() { return cashier; }
+        public String getAmount() { return amount; }
+        public String getTime() { return time; }
+        public String getStatus() { return status; }
+        public String getLastError() { return lastError; }
     }
 }

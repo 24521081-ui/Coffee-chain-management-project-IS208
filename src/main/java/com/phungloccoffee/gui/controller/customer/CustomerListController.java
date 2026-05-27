@@ -1,5 +1,11 @@
 package com.phungloccoffee.gui.controller.customer;
 
+import com.phungloccoffee.bus.CustomerBUS;
+import com.phungloccoffee.model.CustomerPageResult;
+import com.phungloccoffee.model.CustomerSummary;
+import com.phungloccoffee.model.KhachHang;
+import com.phungloccoffee.util.AlertUtils;
+
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -13,78 +19,195 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CustomerListController {
+    private static final String ALL_RANKS = "Tất cả hạng";
+    private static final int DEFAULT_PAGE_SIZE = 10;
+
     @FXML private TextField searchField;
     @FXML private ComboBox<String> tierFilterComboBox;
-    @FXML private ComboBox<String> statusFilterComboBox;
-    @FXML private TableView<CustomerRow> customerTable;
-    @FXML private TableColumn<CustomerRow, String> codeColumn;
-    @FXML private TableColumn<CustomerRow, String> nameColumn;
-    @FXML private TableColumn<CustomerRow, String> phoneColumn;
-    @FXML private TableColumn<CustomerRow, String> emailColumn;
-    @FXML private TableColumn<CustomerRow, String> tierColumn;
-    @FXML private TableColumn<CustomerRow, Integer> pointsColumn;
-    @FXML private TableColumn<CustomerRow, String> statusColumn;
-    @FXML private TableColumn<CustomerRow, Void> actionColumn;
+    @FXML private Label totalCustomersLabel;
+    @FXML private Label newCustomersThisMonthLabel;
+    @FXML private Label pageInfoLabel;
+    @FXML private Label resultCountLabel;
+    @FXML private Button previousPageButton;
+    @FXML private Button nextPageButton;
+    @FXML private TableView<KhachHang> customerTable;
+    @FXML private TableColumn<KhachHang, String> codeColumn;
+    @FXML private TableColumn<KhachHang, String> nameColumn;
+    @FXML private TableColumn<KhachHang, String> phoneColumn;
+    @FXML private TableColumn<KhachHang, String> emailColumn;
+    @FXML private TableColumn<KhachHang, String> tierColumn;
+    @FXML private TableColumn<KhachHang, Integer> pointsColumn;
+    @FXML private TableColumn<KhachHang, Void> actionColumn;
+
+    private final CustomerBUS customerBUS = new CustomerBUS();
+    private int currentPage = 1;
+    private int pageSize = DEFAULT_PAGE_SIZE;
+    private int totalRows;
+    private int totalPages = 1;
 
     @FXML
     private void initialize() {
-        tierFilterComboBox.getItems().setAll("Tất cả hạng", "Gold", "Silver", "Member");
-        statusFilterComboBox.getItems().setAll("Tất cả trạng thái", "Hoạt động", "Tạm khóa");
-        tierFilterComboBox.getSelectionModel().selectFirst();
-        statusFilterComboBox.getSelectionModel().selectFirst();
+        configureColumns();
+        loadRankFilter();
+        configureEvents();
+        loadSummary();
+        loadCustomerPage();
+    }
 
-        codeColumn.setCellValueFactory(new PropertyValueFactory<>("code"));
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+    private void configureColumns() {
+        codeColumn.setCellValueFactory(new PropertyValueFactory<>("khachHangId"));
+        nameColumn.setCellValueFactory(new PropertyValueFactory<>("hoTen"));
         phoneColumn.setCellValueFactory(new PropertyValueFactory<>("phone"));
         emailColumn.setCellValueFactory(new PropertyValueFactory<>("email"));
-        tierColumn.setCellValueFactory(new PropertyValueFactory<>("tier"));
-        pointsColumn.setCellValueFactory(new PropertyValueFactory<>("points"));
-        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
-        statusColumn.setCellFactory(column -> new StatusCell<>());
+        tierColumn.setCellValueFactory(new PropertyValueFactory<>("hangThanhVien"));
+        pointsColumn.setCellValueFactory(new PropertyValueFactory<>("diemTichLuy"));
         actionColumn.setCellFactory(column -> new ActionCell());
         customerTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        loadCustomers();
     }
 
-    private void loadCustomers() {
-        customerTable.setItems(FXCollections.observableArrayList(
-                new CustomerRow("KH001", "Nguyễn Minh Anh", "0901000001", "minh.anh@email.com", "Gold", 1250, "Hoạt động"),
-                new CustomerRow("KH002", "Trần Quốc Bảo", "0901000002", "bao.tran@email.com", "Silver", 680, "Hoạt động"),
-                new CustomerRow("KH003", "Lê Hoàng Yến", "0901000003", "yen.le@email.com", "Member", 120, "Hoạt động"),
-                new CustomerRow("KH004", "Phạm Gia Hân", "0901000004", "han.pham@email.com", "Gold", 1420, "Tạm khóa")
-        ));
+    private void loadRankFilter() {
+        List<String> ranks = new ArrayList<>();
+        ranks.add(ALL_RANKS);
+        try {
+            ranks.addAll(customerBUS.getMembershipRanks());
+        } catch (Exception e) {
+            AlertUtils.showError(e.getMessage());
+        }
+        tierFilterComboBox.setItems(FXCollections.observableArrayList(ranks));
+        tierFilterComboBox.getSelectionModel().selectFirst();
     }
 
-    private static class StatusCell<T> extends TableCell<T, String> {
-        @Override
-        protected void updateItem(String status, boolean empty) {
-            super.updateItem(status, empty);
-            if (empty || status == null) {
-                setGraphic(null);
-                setText(null);
-                return;
-            }
-            Label badge = new Label(status);
-            badge.getStyleClass().addAll("status-badge", "Hoạt động".equals(status) ? "status-success" : "status-warning");
-            setGraphic(badge);
-            setText(null);
-            setAlignment(Pos.CENTER_LEFT);
+    private void configureEvents() {
+        searchField.setOnAction(event -> handleSearch());
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            currentPage = 1;
+            loadCustomerPage();
+        });
+        tierFilterComboBox.setOnAction(event -> handleFilterRank());
+    }
+
+    private void loadSummary() {
+        try {
+            CustomerSummary summary = customerBUS.getCustomerSummary();
+            totalCustomersLabel.setText(String.valueOf(summary.getTotalCustomers()));
+            newCustomersThisMonthLabel.setText(String.valueOf(summary.getNewCustomersThisMonth()));
+        } catch (Exception e) {
+            totalCustomersLabel.setText("0");
+            newCustomersThisMonthLabel.setText("0");
+            AlertUtils.showError(e.getMessage());
         }
     }
 
-    private static class ActionCell extends TableCell<CustomerRow, Void> {
+    private void loadCustomerPage() {
+        try {
+            CustomerPageResult result = customerBUS.getCustomerPage(
+                    searchField.getText(),
+                    tierFilterComboBox.getValue(),
+                    currentPage,
+                    pageSize
+            );
+            currentPage = result.getCurrentPage();
+            pageSize = result.getPageSize();
+            totalRows = result.getTotalRows();
+            totalPages = result.getTotalPages();
+            customerTable.setItems(FXCollections.observableArrayList(result.getCustomers()));
+            updatePagination();
+        } catch (Exception e) {
+            customerTable.setItems(FXCollections.observableArrayList());
+            totalRows = 0;
+            totalPages = 1;
+            currentPage = 1;
+            updatePagination();
+            AlertUtils.showError(e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleSearch() {
+        currentPage = 1;
+        loadCustomerPage();
+    }
+
+    @FXML
+    private void handleFilterRank() {
+        currentPage = 1;
+        loadCustomerPage();
+    }
+
+    @FXML
+    private void handleNextPage() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            loadCustomerPage();
+        }
+    }
+
+    @FXML
+    private void handlePreviousPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            loadCustomerPage();
+        }
+    }
+
+    @FXML
+    private void handleViewCustomer() {
+        handleViewCustomer(customerTable.getSelectionModel().getSelectedItem());
+    }
+
+    @FXML
+    private void handleEditCustomer() {
+        handleEditCustomer(customerTable.getSelectionModel().getSelectedItem());
+    }
+
+    private void handleViewCustomer(KhachHang customer) {
+        if (customer == null) {
+            AlertUtils.showWarning("Vui lòng chọn khách hàng cần xem.");
+            return;
+        }
+        AlertUtils.showInfo("Khách hàng: " + customer.getHoTen()
+                + "\nMã KH: " + customer.getKhachHangId()
+                + "\nĐiện thoại: " + nullToEmpty(customer.getPhone())
+                + "\nEmail: " + nullToEmpty(customer.getEmail())
+                + "\nHạng: " + nullToEmpty(customer.getHangThanhVien())
+                + "\nĐiểm: " + customer.getDiemTichLuy());
+    }
+
+    private void handleEditCustomer(KhachHang customer) {
+        if (customer == null) {
+            AlertUtils.showWarning("Vui lòng chọn khách hàng cần sửa.");
+            return;
+        }
+        AlertUtils.showInfo("Chức năng sửa khách hàng đang chờ màn hình nhập liệu. Mã KH: " + customer.getKhachHangId());
+    }
+
+    private void updatePagination() {
+        pageInfoLabel.setText("Trang " + currentPage + " / " + totalPages);
+        resultCountLabel.setText("Tổng " + totalRows + " khách hàng");
+        previousPageButton.setDisable(totalRows == 0 || currentPage <= 1);
+        nextPageButton.setDisable(totalRows == 0 || currentPage >= totalPages);
+    }
+
+    private String nullToEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
+    private class ActionCell extends TableCell<KhachHang, Void> {
         private final HBox box = new HBox(8);
         private final Button viewButton = new Button("Xem");
         private final Button editButton = new Button("Sửa");
-        private final Button lockButton = new Button();
 
         ActionCell() {
             viewButton.getStyleClass().addAll("action-button", "action-view-button");
             editButton.getStyleClass().addAll("action-button", "action-edit-button");
-            lockButton.getStyleClass().addAll("action-button", "action-lock-button");
+            viewButton.setOnAction(event -> handleViewCustomer(getTableRow().getItem()));
+            editButton.setOnAction(event -> handleEditCustomer(getTableRow().getItem()));
             box.setAlignment(Pos.CENTER_LEFT);
-            box.getChildren().addAll(viewButton, editButton, lockButton);
+            box.getChildren().addAll(viewButton, editButton);
         }
 
         @Override
@@ -94,59 +217,7 @@ public class CustomerListController {
                 setGraphic(null);
                 return;
             }
-            CustomerRow row = getTableRow().getItem();
-            lockButton.setText("Tạm khóa".equals(row.getStatus()) ? "Mở" : "Khóa");
-            lockButton.getStyleClass().removeAll("action-lock-button", "action-approve-button");
-            lockButton.getStyleClass().add("Tạm khóa".equals(row.getStatus()) ? "action-approve-button" : "action-lock-button");
             setGraphic(box);
-        }
-    }
-
-    public static class CustomerRow {
-        private final String code;
-        private final String name;
-        private final String phone;
-        private final String email;
-        private final String tier;
-        private final int points;
-        private final String status;
-
-        public CustomerRow(String code, String name, String phone, String email, String tier, int points, String status) {
-            this.code = code;
-            this.name = name;
-            this.phone = phone;
-            this.email = email;
-            this.tier = tier;
-            this.points = points;
-            this.status = status;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getPhone() {
-            return phone;
-        }
-
-        public String getEmail() {
-            return email;
-        }
-
-        public String getTier() {
-            return tier;
-        }
-
-        public int getPoints() {
-            return points;
-        }
-
-        public String getStatus() {
-            return status;
         }
     }
 }

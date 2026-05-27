@@ -1,9 +1,11 @@
+com\phungloccoffee\offline\SyncService.class
 com\phungloccoffee\gui\model\ProductOption.class
 com\phungloccoffee\bus\EmployeeBUS.class
 com\phungloccoffee\gui\controller\dashboard\DirectorDashboardController$ActivityRow.class
 com\phungloccoffee\service\auth\ForgotPasswordService$AccountDestination.class
 com\phungloccoffee\gui\controller\inventory\TransferApprovalController$QuantityCell.class
 com\phungloccoffee\gui\controller\inventory\TransferFormController.class
+com\phungloccoffee\offline\NetworkMonitor.class
 com\phungloccoffee\gui\controller\report\BranchInventoryReportController$InventoryRow.class
 com\phungloccoffee\service\auth\SmsService.class
 com\phungloccoffee\gui\controller\report\BranchInventoryReportController$RatioCell.class
@@ -37,6 +39,7 @@ com\phungloccoffee\bus\InventoryAuditBUS.class
 com\phungloccoffee\model\ProductCategory.class
 com\phungloccoffee\model\NhanVien.class
 com\phungloccoffee\gui\service\MenuConfig.class
+com\phungloccoffee\offline\OfflineStorage.class
 com\phungloccoffee\dao\PhieuXuatKhoDAO.class
 com\phungloccoffee\gui\controller\pos\PaymentHistoryController$StatusCell.class
 com\phungloccoffee\gui\controller\report\BranchInventoryReportController$BlueTextCell.class
@@ -50,7 +53,6 @@ com\phungloccoffee\gui\service\RealAuthService.class
 com\phungloccoffee\gui\controller\inventory\MaterialLossApprovalController$StatusCell.class
 com\phungloccoffee\gui\controller\system\PosDeviceManagementController.class
 com\phungloccoffee\gui\controller\inventory\ExportFormController$StatusCell.class
-com\phungloccoffee\gui\controller\customer\CustomerListController$StatusCell.class
 com\phungloccoffee\gui\controller\inventory\MaterialLossApprovalController$QuantityCell.class
 com\phungloccoffee\gui\controller\inventory\TransferApprovalController.class
 com\phungloccoffee\gui\controller\inventory\ImportApprovalController.class
@@ -73,15 +75,18 @@ com\phungloccoffee\gui\controller\layout\MainController.class
 com\phungloccoffee\gui\controller\inventory\ExportApprovalController.class
 com\phungloccoffee\util\ValidationUtils.class
 com\phungloccoffee\gui\controller\account\PermissionController.class
+com\phungloccoffee\dao\InventoryDAO$StockDeduction.class
 com\phungloccoffee\gui\controller\layout\MainDashboardController.class
 com\phungloccoffee\gui\controller\common\PlaceholderPageController.class
 com\phungloccoffee\gui\controller\inventory\SupplierListController.class
+com\phungloccoffee\dao\CustomerDAO.class
 com\phungloccoffee\gui\controller\account\PermissionController$PermissionCell.class
 com\phungloccoffee\gui\controller\inventory\TransferFormController$ActionCell.class
 com\phungloccoffee\gui\controller\account\AccountEditController.class
 com\phungloccoffee\gui\controller\account\AccountEditController$AccountRow.class
 com\phungloccoffee\gui\controller\inventory\InventoryAuditController.class
 com\phungloccoffee\gui\util\IconFactory.class
+com\phungloccoffee\gui\controller\pos\PaymentHistoryController$ActionCell.class
 com\phungloccoffee\gui\controller\dashboard\DirectorDashboardController$StatusCell.class
 com\phungloccoffee\gui\controller\inventory\MaterialLossApprovalController$ActionCell.class
 com\phungloccoffee\gui\model\AppUserSession.class
@@ -122,6 +127,8 @@ com\phungloccoffee\gui\controller\inventory\ExportApprovalController$QuantityCel
 com\phungloccoffee\gui\controller\inventory\InventoryListController.class
 com\phungloccoffee\exception\NotFoundException.class
 com\phungloccoffee\util\DateTimeUtils.class
+com\phungloccoffee\dao\InventoryDAO$BranchInventorySnapshot.class
+com\phungloccoffee\offline\ProductCache.class
 com\phungloccoffee\gui\controller\inventory\ImportApprovalController$CreatorCell.class
 com\phungloccoffee\gui\controller\report\RevenueReportController$RevenueRow.class
 com\phungloccoffee\gui\controller\inventory\ExportFormController$MaterialRow.class
@@ -139,7 +146,6 @@ com\phungloccoffee\gui\controller\inventory\ExportApprovalController$CodeCell.cl
 com\phungloccoffee\model\Order.class
 com\phungloccoffee\model\HaoHutNguyenLieu.class
 com\phungloccoffee\gui\controller\inventory\MaterialLossApprovalController.class
-com\phungloccoffee\gui\controller\customer\CustomerListController$CustomerRow.class
 com\phungloccoffee\gui\controller\inventory\ExportFormController$RemoveCell.class
 com\phungloccoffee\gui\controller\inventory\TransferApprovalController$CodeCell.class
 com\phungloccoffee\model\RevenueReport.class
@@ -154,16 +160,19 @@ com\phungloccoffee\gui\controller\inventory\ExportApprovalController$WrapTextCel
 com\phungloccoffee\gui\controller\inventory\ImportApprovalController$ActionCell.class
 com\phungloccoffee\gui\controller\inventory\ExportApprovalController$ExportRequestRow.class
 com\phungloccoffee\gui\controller\inventory\SupplierListController$SupplierRow.class
+com\phungloccoffee\model\CustomerSummary.class
 com\phungloccoffee\gui\controller\branch\BranchManagementController$StatusCell.class
 com\phungloccoffee\gui\controller\inventory\WarehouseFormController$ImportDetailRow.class
 com\phungloccoffee\service\auth\ForgotPasswordService$ResetPasswordResult.class
 com\phungloccoffee\dao\OrderDAO.class
 com\phungloccoffee\gui\controller\inventory\MaterialLossApprovalController$CodeCell.class
+com\phungloccoffee\model\offline\OfflineOrder.class
 com\phungloccoffee\gui\controller\layout\TopbarController.class
 com\phungloccoffee\gui\controller\report\BranchRevenueReportController$RevenueRow.class
 com\phungloccoffee\gui\controller\pos\OfflineTransactionController$ActionCell.class
 com\phungloccoffee\gui\controller\pos\OfflineTransactionController$OfflineRow.class
 com\phungloccoffee\bus\PermissionBUS.class
+com\phungloccoffee\offline\InventoryCache.class
 com\phungloccoffee\gui\controller\report\BranchRevenueReportController$GrowthCell.class
 com\phungloccoffee\MainApp.class
 com\phungloccoffee\gui\controller\inventory\WarehouseFormController$RemoveCell.class
@@ -171,6 +180,7 @@ com\phungloccoffee\gui\controller\inventory\TransferApprovalController$ActionCel
 com\phungloccoffee\gui\controller\inventory\ExportApprovalController$StatusBadgeCell.class
 com\phungloccoffee\model\Kho.class
 com\phungloccoffee\util\PasswordUtil.class
+com\phungloccoffee\offline\InventoryCache$CacheData.class
 com\phungloccoffee\gui\controller\report\BestSellerReportController$BestSellerRow.class
 com\phungloccoffee\util\CurrencyFormatter.class
 com\phungloccoffee\model\NhaCungCap.class
@@ -191,6 +201,7 @@ com\phungloccoffee\gui\controller\inventory\SupplierListController$StatusCell.cl
 com\phungloccoffee\gui\service\MenuConfig$1.class
 com\phungloccoffee\gui\controller\inventory\ExportApprovalController$PriceCell.class
 com\phungloccoffee\model\AppUser.class
+com\phungloccoffee\model\CustomerPageResult.class
 com\phungloccoffee\model\PaymentHistory.class
 com\phungloccoffee\bus\ExportApprovalBUS.class
 com\phungloccoffee\bus\AccountBUS.class
@@ -198,6 +209,7 @@ com\phungloccoffee\gui\controller\inventory\MaterialLossApprovalController$WrapT
 com\phungloccoffee\dao\ReportDAO.class
 com\phungloccoffee\gui\controller\auth\LoginController.class
 com\phungloccoffee\dao\ChiNhanhDAO.class
+com\phungloccoffee\model\offline\OfflineInventoryMovement.class
 com\phungloccoffee\gui\controller\account\EmployeeListController.class
 com\phungloccoffee\gui\model\ToppingItem.class
 com\phungloccoffee\gui\controller\inventory\ImportApprovalController$WrapTextCell.class
@@ -213,7 +225,9 @@ com\phungloccoffee\App.class
 com\phungloccoffee\gui\controller\inventory\TransferFormController$StatusCell.class
 com\phungloccoffee\gui\controller\inventory\TransferFormController$TransferRow.class
 com\phungloccoffee\gui\service\PermissionService.class
+com\phungloccoffee\model\offline\OfflineOrderDetail.class
 com\phungloccoffee\exception\PermissionException.class
+com\phungloccoffee\bus\CustomerBUS.class
 com\phungloccoffee\gui\controller\pos\OfflineTransactionController$StatusCell.class
 com\phungloccoffee\model\InventoryItem.class
 com\phungloccoffee\gui\controller\branch\BranchManagementController$ActionCell.class
