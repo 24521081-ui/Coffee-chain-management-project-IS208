@@ -55,6 +55,9 @@ public class AccountEditController {
         statusColumn.setCellFactory(column -> new StatusCell<>());
         accountTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         accountTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, account) -> fillForm(account));
+        userIdField.getStyleClass().add("readonly-code-field");
+        employeeCodeField.setEditable(false);
+        employeeCodeField.getStyleClass().add("readonly-code-field");
 
         loadAccounts();
     }
@@ -62,11 +65,11 @@ public class AccountEditController {
     @FXML
     private void loadAccounts() {
         accounts.setAll(
-                new AccountRow("1", "admin", "NV001", "Quản trị viên", "IT_ADMIN", "Hoạt động", ""),
-                new AccountRow("2", "thungan", "NV002", "Nhân viên thu ngân", "THU_NGAN", "Hoạt động", ""),
-                new AccountRow("3", "quanly", "NV003", "Quản lý chi nhánh", "QUAN_LY_CHI_NHANH", "Hoạt động", ""),
-                new AccountRow("4", "kho", "NV004", "Nhân viên kho", "NHAN_VIEN_KHO", "Hoạt động", ""),
-                new AccountRow("5", "giamdoc", "NV005", "Ban giám đốc", "BAN_GIAM_DOC", "Hoạt động", "")
+                new AccountRow("TK001", "admin", "NV001", "Quản trị viên", "IT_ADMIN", "Hoạt động", ""),
+                new AccountRow("TK002", "thungan", "NV002", "Nhân viên thu ngân", "THU_NGAN", "Hoạt động", ""),
+                new AccountRow("TK003", "quanly", "NV003", "Quản lý chi nhánh", "QUAN_LY_CHI_NHANH", "Hoạt động", ""),
+                new AccountRow("TK004", "kho", "NV004", "Nhân viên kho", "NHAN_VIEN_KHO", "Hoạt động", ""),
+                new AccountRow("TK005", "giamdoc", "NV005", "Ban giám đốc", "BAN_GIAM_DOC", "Hoạt động", "")
         );
         accountTable.setItems(accounts);
         accountTable.getSelectionModel().selectFirst();
@@ -79,7 +82,6 @@ public class AccountEditController {
             AlertUtils.showWarning("Vui lòng chọn tài khoản cần cập nhật.");
             return;
         }
-        selected.setEmployeeCode(employeeCodeField.getText());
         selected.setFullName(fullNameField.getText());
         selected.setRole(roleComboBox.getValue());
         selected.setStatus(statusComboBox.getValue());

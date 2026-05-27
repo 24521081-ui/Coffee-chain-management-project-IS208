@@ -1,39 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx/21"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.phungloccoffee.gui.controller.inventory.InventoryAuditController"
-      styleClass="page-root">
-    <HBox styleClass="filter-card report-controls-row">
-        <TextField promptText="Tìm mã kiểm kê, chi nhánh..." prefWidth="280" styleClass="page-input" />
-        <ComboBox promptText="Trạng thái" prefWidth="170" styleClass="page-combo" />
-        <ComboBox promptText="Chi nhánh" prefWidth="180" styleClass="page-combo" />
-        <Button text="Tải lại" onAction="#loadAudits" styleClass="secondary-button" />
-        <Region HBox.hgrow="ALWAYS" />
-    </HBox>
-
-    <VBox styleClass="table-card" VBox.vgrow="ALWAYS">
-        <VBox spacing="4">
-            <Label text="Danh sách phiếu kiểm kê" styleClass="section-title" />
-            <Label text="Theo dõi các đợt kiểm kê tồn kho gần đây" styleClass="section-subtitle" />
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.phungloccoffee.gui.controller.inventory.InventoryAuditController"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED"
+            styleClass="content-scroll">
+    <VBox styleClass="page-root">
+        <VBox styleClass="form-card" spacing="18">
+            <VBox spacing="4">
+                <Label text="Thông tin phiếu kiểm kê" styleClass="section-title" />
+                <Label text="Nhân viên kho nhập số lượng thực tế, hệ thống sẽ tính chênh lệch và chờ gửi duyệt." styleClass="section-subtitle" />
+            </VBox>
+            <GridPane styleClass="form-grid">
+                <Label text="Mã phiếu" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                <TextField fx:id="auditCodeField" promptText="Tự sinh nếu để trống" prefWidth="230" styleClass="page-input" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                <Label text="Ngày kiểm kê" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+                <DatePicker fx:id="auditDatePicker" prefWidth="230" styleClass="page-date" GridPane.columnIndex="3" GridPane.rowIndex="0" />
+                <Label text="Người lập" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                <TextField fx:id="createdByField" prefWidth="230" styleClass="page-input" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                <Label text="Ghi chú" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                <TextArea fx:id="noteArea" prefRowCount="2" promptText="Ghi chú tổng quan..." wrapText="true" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+            </GridPane>
         </VBox>
-        <TableView fx:id="auditTable" prefHeight="520" VBox.vgrow="ALWAYS" styleClass="page-table">
-            <columns>
-                <TableColumn fx:id="codeColumn" text="Mã kiểm kê" prefWidth="160" />
-                <TableColumn fx:id="branchColumn" text="Chi nhánh" prefWidth="220" />
-                <TableColumn fx:id="auditedAtColumn" text="Ngày kiểm kê" prefWidth="180" />
-                <TableColumn fx:id="statusColumn" text="Trạng thái" prefWidth="140" />
-            </columns>
-        </TableView>
+
+        <VBox styleClass="table-card" VBox.vgrow="ALWAYS">
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <VBox spacing="4">
+                    <Label text="Chi tiết kiểm kê" styleClass="section-title" />
+                    <Label text="Nhập số lượng thực tế. Nếu chênh lệch vượt ngưỡng, bắt buộc phải có giải trình." styleClass="section-subtitle" />
+                </VBox>
+                <Region HBox.hgrow="ALWAYS" />
+                <Button text="Tải lại tồn hệ thống" onAction="#reloadSystemQuantity" styleClass="secondary-button" />
+            </HBox>
+            <TableView fx:id="auditDetailTable" editable="true" prefHeight="430" VBox.vgrow="ALWAYS" styleClass="page-table">
+                <columns>
+                    <TableColumn fx:id="codeColumn" text="Mã NL" prefWidth="100" />
+                    <TableColumn fx:id="itemColumn" text="Tên nguyên liệu" prefWidth="220" />
+                    <TableColumn fx:id="unitColumn" text="Đơn vị" prefWidth="90" />
+                    <TableColumn fx:id="systemColumn" text="Tồn hệ thống" prefWidth="130" />
+                    <TableColumn fx:id="actualColumn" text="Số lượng thực tế" prefWidth="140" />
+                    <TableColumn fx:id="diffColumn" text="Chênh lệch" prefWidth="120" />
+                    <TableColumn fx:id="noteColumn" text="Giải trình" prefWidth="180" />
+                    <TableColumn fx:id="actionColumn" text="Thao tac" prefWidth="140" />
+                </columns>
+            </TableView>
+        </VBox>
+
+        <HBox styleClass="action-footer">
+            <Region HBox.hgrow="ALWAYS" />
+            <Button text="Lưu nháp" onAction="#saveDraft" styleClass="secondary-button" />
+            <Button text="Gửi duyệt kiểm kê" onAction="#submitAudit" styleClass="primary-button" />
+        </HBox>
     </VBox>
-</VBox>
+</ScrollPane>

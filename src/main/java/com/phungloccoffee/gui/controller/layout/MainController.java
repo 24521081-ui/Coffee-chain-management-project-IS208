@@ -13,6 +13,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.application.Platform;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
@@ -80,10 +81,63 @@ public class MainController {
 
         try {
             Parent page = FXMLLoader.load(resource);
-            contentArea.getChildren().setAll(page);
+            contentArea.getChildren().setAll(prepareContentPage(item, page));
         } catch (Exception e) {
             loadPlaceholder(item);
         }
+    }
+
+    private Parent prepareContentPage(MenuItemModel item, Parent page) {
+        if (!shouldUseMainScroll(item.getId()) || page instanceof ScrollPane) {
+            return page;
+        }
+        addStyleClass(page, "scroll-content");
+        if (isReportLikePage(item.getId())) {
+            addStyleClass(page, "report-content");
+        }
+
+        ScrollPane scrollPane = new ScrollPane(page);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(false);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setPannable(true);
+        scrollPane.getStyleClass().add("main-scroll-pane");
+        return scrollPane;
+    }
+
+    private void addStyleClass(Parent page, String styleClass) {
+        if (!page.getStyleClass().contains(styleClass)) {
+            page.getStyleClass().add(styleClass);
+        }
+    }
+
+    private boolean shouldUseMainScroll(String menuId) {
+        return switch (menuId) {
+            case "BEST_SELLER_REPORT",
+                 "REVENUE_REPORT",
+                 "INVENTORY_REPORT",
+                 "BRANCH_REVENUE_REPORT",
+                 "BRANCH_INVENTORY_REPORT",
+                 "DIRECTOR_DASHBOARD",
+                 "BRANCH_DASHBOARD",
+                 "BRANCH_MANAGEMENT",
+                 "PRODUCT_MANAGEMENT" -> true;
+            default -> false;
+        };
+    }
+
+    private boolean isReportLikePage(String menuId) {
+        return switch (menuId) {
+            case "BEST_SELLER_REPORT",
+                 "REVENUE_REPORT",
+                 "INVENTORY_REPORT",
+                 "BRANCH_REVENUE_REPORT",
+                 "BRANCH_INVENTORY_REPORT",
+                 "DIRECTOR_DASHBOARD",
+                 "BRANCH_DASHBOARD" -> true;
+            default -> false;
+        };
     }
 
     private void loadPlaceholder(MenuItemModel item) {

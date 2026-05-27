@@ -1,5 +1,6 @@
 package com.phungloccoffee.gui.controller.employee;
 
+import com.phungloccoffee.util.AutoCodeGenerator;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -174,7 +175,9 @@ public class BranchEmployeeListController {
     }
 
     private String nextEmployeeId() {
-        return "NV" + String.format("%03d", employees.size() + 1);
+        return AutoCodeGenerator.generateNextCode("NV", employees.stream()
+                .map(EmployeeRow::getEmployeeId)
+                .toList());
     }
 
     private String safe(String value) {

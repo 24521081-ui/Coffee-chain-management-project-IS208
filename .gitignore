@@ -1,5 +1,10 @@
 target/
 *.class
+config.properties
 .idea/
 *.iml
+.vscode/
 .DS_Store
+*.log
+out/
+build/

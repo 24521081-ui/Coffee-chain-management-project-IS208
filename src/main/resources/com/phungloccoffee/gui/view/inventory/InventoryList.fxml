@@ -14,7 +14,7 @@
       fx:controller="com.phungloccoffee.gui.controller.inventory.InventoryListController"
       styleClass="page-root">
     <HBox styleClass="filter-card report-controls-row">
-        <TextField promptText="Tìm nguyên liệu, mã kho..." prefWidth="300" styleClass="page-input" />
+        <TextField fx:id="keywordField" promptText="Tìm nguyên liệu, mã kho..." prefWidth="300" styleClass="page-input" />
         <ComboBox fx:id="categoryComboBox" promptText="Nhóm nguyên liệu" prefWidth="190" styleClass="page-combo" />
         <ComboBox fx:id="statusComboBox" promptText="Trạng thái tồn" prefWidth="170" styleClass="page-combo" />
         <Region HBox.hgrow="ALWAYS" />
@@ -23,15 +23,15 @@
     <HBox styleClass="stats-row">
         <VBox HBox.hgrow="ALWAYS" styleClass="metric-card">
             <Label text="Mặt hàng theo dõi" styleClass="metric-label" />
-            <Label text="128" styleClass="metric-value" />
+            <Label fx:id="trackedCountLabel" text="0" styleClass="metric-value" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" styleClass="metric-card">
             <Label text="Tồn thấp" styleClass="metric-label" />
-            <Label text="06" styleClass="metric-value" />
+            <Label fx:id="lowStockCountLabel" text="0" styleClass="metric-value" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" styleClass="metric-card">
             <Label text="Hết hàng" styleClass="metric-label" />
-            <Label text="02" styleClass="metric-value" />
+            <Label fx:id="outOfStockCountLabel" text="0" styleClass="metric-value" />
         </VBox>
     </HBox>
 

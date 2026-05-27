@@ -58,3 +58,57 @@ Resolve Git conflict để branch có thể merge/push.
 - Nếu conflict quay lại ở `target/classes` thì xử lý bằng cách bỏ tracking `target/`, không merge `.class`.
 - Nếu conflict nằm ở source thật thì phải merge thủ công sau khi đọc nội dung file.
 - Không được force push nếu chưa được người dùng cho phép.
+# CODEX IMPLEMENTATION TRACE - Resolve conflicts in .gitignore and sql/01_drop_objects.sql
+
+## 1. Muc tieu
+Resolve conflict 2 file:
+- `.gitignore`
+- `sql/01_drop_objects.sql`
+
+## 2. Nguyen nhan conflict
+- Hai nhanh cung them/sua `.gitignore`.
+- Hai nhanh cung sua script drop object SQL `sql/01_drop_objects.sql`.
+
+## 3. Cach xu ly .gitignore
+- Giu `target/` de Maven build output khong bi Git track lai.
+- Giu `*.class` de khong track bytecode Java.
+- Giu `config.properties` tu `origin/main` de tranh commit cau hinh local.
+- Giu them cac rule an toan: `.idea/`, `*.iml`, `.vscode/`, `.DS_Store`, `*.log`, `out/`, `build/`.
+- Khong them rule ignore `src/`, `sql/`, `pom.xml`, `README.md`, `resources/`, `*.java`, `*.fxml`, `*.css`.
+- Kiem tra `git ls-files target` va `git ls-files -- "*.class"`: khong con file nao duoc track, nen khong can chay them `git rm --cached`.
+
+## 4. Cach xu ly sql/01_drop_objects.sql
+- Giu danh sach DROP tu HEAD theo style uppercase `DROP TABLE ... CASCADE CONSTRAINTS PURGE;`.
+- Giu object moi `order_detail_topping` tu HEAD vi project hien co source `OrderDetailTopping` va DAO tuong ung.
+- Giu cac DROP co o ca hai nhanh chi mot lan, loai trung lap theo ten object.
+- Khong doi thu tu phu thuoc dang co: bang chi tiet va bang con truoc, bang cha sau.
+- Khong con conflict marker trong file.
+- Khong co object SQL nao can kiem tra them trong pham vi conflict nay.
+
+## 5. Cac lenh da chay
+- `git status --short --branch`
+- `git fetch origin`
+- `git branch backup-before-resolve-conflict-2`
+- `git merge origin/main`
+- `Get-Content .gitignore`
+- `Get-Content sql\01_drop_objects.sql`
+- `git ls-files target`
+- `git ls-files -- "*.class"`
+- `rg -n "^<<<<<<< |^=======$|^>>>>>>> " --glob "!target/**" --glob "!.git/**" .`
+- `git add .gitignore`
+- `git add sql/01_drop_objects.sql`
+- `git add CODEX_IMPLEMENTATION_TRACE.md`
+- `git status`
+- `mvn clean compile`
+- `git commit -m "Resolve conflicts in gitignore and drop objects script"`
+- `git push`
+
+## 6. Ket qua kiem tra
+- Conflict ban dau dung 2 file: `.gitignore` va `sql/01_drop_objects.sql`.
+- Sau khi resolve se kiem tra `git status` khong con unmerged paths.
+- `mvn clean compile`: thanh cong (`BUILD SUCCESS`), compile 173 source files.
+
+## 7. Huong dan cho Codex khac
+- Khong commit lai `target/` hoac `*.class`.
+- Neu conflict o file SQL thi phai merge thu cong, khong chon bua.
+- Neu sau nay them bang moi thi can cap nhat `sql/01_drop_objects.sql` theo dung thu tu phu thuoc.
