@@ -2,6 +2,8 @@ package com.phungloccoffee.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class OrderDetail {
     private String chiTietDonHangId;
@@ -11,6 +13,7 @@ public class OrderDetail {
     private BigDecimal donGia;
     private BigDecimal thanhTien;
     private String ghiChu;
+    private List<OrderDetailTopping> toppings = new ArrayList<>();
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -44,6 +47,10 @@ public class OrderDetail {
     public void setThanhTien(BigDecimal thanhTien) { this.thanhTien = thanhTien; }
     public String getGhiChu() { return ghiChu; }
     public void setGhiChu(String ghiChu) { this.ghiChu = ghiChu; }
+    public List<OrderDetailTopping> getToppings() { return toppings; }
+    public void setToppings(List<OrderDetailTopping> toppings) {
+        this.toppings = toppings == null ? new ArrayList<>() : new ArrayList<>(toppings);
+    }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

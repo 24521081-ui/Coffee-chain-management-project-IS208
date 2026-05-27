@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.phungloccoffee.gui.controller.inventory.StocktakeApprovalController"
+      styleClass="page-root">
+    <VBox styleClass="table-card" VBox.vgrow="ALWAYS" spacing="12">
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="4">
+                <Label text="Duyệt phiếu kiểm kê kho" styleClass="section-title" />
+                <Label text="Quản lý chi nhánh duyệt hoặc từ chối các phiếu kiểm kê đang chờ duyệt." styleClass="section-subtitle" />
+            </VBox>
+            <Region HBox.hgrow="ALWAYS" />
+        </HBox>
+        <TableView fx:id="stocktakeTable" prefHeight="520" VBox.vgrow="ALWAYS" styleClass="page-table">
+            <columns>
+                <TableColumn fx:id="codeColumn" text="MÃ PHIẾU" prefWidth="140" />
+                <TableColumn fx:id="creatorColumn" text="NGƯỜI LẬP" prefWidth="120" />
+                <TableColumn fx:id="dateColumn" text="NGÀY LẬP" prefWidth="160" />
+                <TableColumn fx:id="noteColumn" text="GHI CHÚ" prefWidth="260" />
+                <TableColumn fx:id="itemCountColumn" text="SL MẶT HÀNG" prefWidth="120" />
+                <TableColumn fx:id="statusColumn" text="TRẠNG THÁI" prefWidth="120" />
+                <TableColumn fx:id="actionColumn" text="HÀNH ĐỘNG" prefWidth="180" />
+            </columns>
+        </TableView>
+    </VBox>
+</VBox>

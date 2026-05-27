@@ -1,7 +1,11 @@
 package com.phungloccoffee.model.offline;
 
+import com.phungloccoffee.model.OrderDetailTopping;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 public class OfflineOrderDetail implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -11,6 +15,7 @@ public class OfflineOrderDetail implements Serializable {
     private BigDecimal unitPrice;
     private BigDecimal lineTotal;
     private String note;
+    private List<OrderDetailTopping> toppings = new ArrayList<>();
 
     public OfflineOrderDetail() {
     }
@@ -21,6 +26,12 @@ public class OfflineOrderDetail implements Serializable {
         this.unitPrice = unitPrice;
         this.lineTotal = lineTotal;
         this.note = note;
+    }
+
+    public OfflineOrderDetail(String productId, BigDecimal quantity, BigDecimal unitPrice,
+                              BigDecimal lineTotal, String note, List<OrderDetailTopping> toppings) {
+        this(productId, quantity, unitPrice, lineTotal, note);
+        setToppings(toppings);
     }
 
     public String getProductId() {
@@ -61,5 +72,13 @@ public class OfflineOrderDetail implements Serializable {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public List<OrderDetailTopping> getToppings() {
+        return toppings;
+    }
+
+    public void setToppings(List<OrderDetailTopping> toppings) {
+        this.toppings = toppings == null ? new ArrayList<>() : new ArrayList<>(toppings);
     }
 }

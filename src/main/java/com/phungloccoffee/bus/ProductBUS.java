@@ -89,7 +89,10 @@ public class ProductBUS extends PermissionBUS {
     }
 
     private boolean isValidProductType(String value) {
-        return "THANH_PHAM".equals(value) || "NGUYEN_LIEU".equals(value) || "BAN_THANH_PHAM".equals(value);
+        return "THANH_PHAM".equals(value)
+                || "NGUYEN_LIEU".equals(value)
+                || "BAN_THANH_PHAM".equals(value)
+                || "TOPPING".equals(value);
     }
 
     private boolean isValidUnit(String value) {
