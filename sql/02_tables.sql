@@ -128,7 +128,8 @@ CREATE TABLE san_pham (
         loai_san_pham IN (
             'THANH_PHAM',
             'NGUYEN_LIEU',
-            'BAN_THANH_PHAM'
+            'BAN_THANH_PHAM',
+            'TOPPING'
         )
     ),
     CONSTRAINT ck_sp_dvt CHECK (
@@ -191,6 +192,20 @@ CREATE TABLE chi_tiet_don_hang (
     updated_at TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT fk_ctdh_dh FOREIGN KEY (don_hang_id) REFERENCES don_hang (don_hang_id),
     CONSTRAINT fk_ctdh_sp FOREIGN KEY (san_pham_id) REFERENCES san_pham (san_pham_id)
+);
+
+CREATE TABLE order_detail_topping (
+    id VARCHAR2 (30) PRIMARY KEY,
+    order_detail_id VARCHAR2 (30) NOT NULL,
+    topping_product_id VARCHAR2 (20) NOT NULL,
+    topping_name NVARCHAR2 (150) NOT NULL,
+    quantity NUMBER (12, 2) NOT NULL,
+    unit_price NUMBER (12, 2) NOT NULL,
+    subtotal NUMBER (12, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT fk_odt_order_detail FOREIGN KEY (order_detail_id) REFERENCES chi_tiet_don_hang (chi_tiet_don_hang_id),
+    CONSTRAINT fk_odt_topping_product FOREIGN KEY (topping_product_id) REFERENCES san_pham (san_pham_id)
 );
 
 CREATE TABLE giao_dich_offline (

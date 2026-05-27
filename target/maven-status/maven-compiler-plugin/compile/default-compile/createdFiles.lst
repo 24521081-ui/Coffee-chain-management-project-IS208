@@ -34,6 +34,7 @@ com\phungloccoffee\model\ChiTietKiemKeKho.class
 com\phungloccoffee\bus\InventoryBUS.class
 com\phungloccoffee\gui\model\AppRole.class
 com\phungloccoffee\gui\controller\branch\BranchDashboardController.class
+com\phungloccoffee\dao\OrderDetailToppingDAO.class
 com\phungloccoffee\gui\controller\inventory\InventoryListController$ActionCell.class
 com\phungloccoffee\bus\InventoryAuditBUS.class
 com\phungloccoffee\model\ProductCategory.class
@@ -66,6 +67,7 @@ com\phungloccoffee\gui\controller\report\InventoryReportController$StatusCell.cl
 com\phungloccoffee\dao\PhieuNhapKhoDAO.class
 com\phungloccoffee\gui\controller\report\BranchInventoryReportController$InventoryMetric.class
 com\phungloccoffee\gui\controller\inventory\TransferApprovalController$WrapTextCell.class
+com\phungloccoffee\bus\PaymentBUS$PaymentResult.class
 com\phungloccoffee\dao\AppUserDAO.class
 com\phungloccoffee\gui\controller\inventory\ImportApprovalController$QuantityCell.class
 com\phungloccoffee\gui\controller\inventory\MaterialLossController$LossRow.class
@@ -111,6 +113,7 @@ com\phungloccoffee\gui\controller\product\ProductManagementController$StatusCell
 com\phungloccoffee\model\WarehouseTransaction.class
 com\phungloccoffee\gui\controller\inventory\WarehouseFormController.class
 com\phungloccoffee\gui\controller\inventory\InventoryAuditController$StatusCell.class
+com\phungloccoffee\model\OrderDetailTopping.class
 com\phungloccoffee\gui\controller\report\BranchInventoryReportController$StatusCell.class
 com\phungloccoffee\dao\ChiTietDonHangDAO.class
 com\phungloccoffee\gui\controller\report\BestSellerReportController$TrendCell.class
@@ -122,6 +125,7 @@ com\phungloccoffee\gui\controller\inventory\MaterialLossController$StatusCell.cl
 com\phungloccoffee\gui\controller\inventory\InventoryListController$StatusCell.class
 com\phungloccoffee\gui\controller\layout\SidebarController.class
 com\phungloccoffee\gui\controller\report\InventoryReportController$InventoryRow.class
+com\phungloccoffee\gui\controller\pos\POSMainController$ToppingSelection.class
 com\phungloccoffee\service\auth\ForgotPasswordService$VerifyOtpResult.class
 com\phungloccoffee\gui\controller\inventory\ExportApprovalController$QuantityCell.class
 com\phungloccoffee\gui\controller\inventory\InventoryListController.class

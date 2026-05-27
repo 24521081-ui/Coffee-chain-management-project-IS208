@@ -3,8 +3,10 @@ package com.phungloccoffee.gui.controller.layout;
 import com.phungloccoffee.gui.model.AppUserSession;
 import com.phungloccoffee.gui.util.IconFactory;
 import com.phungloccoffee.gui.util.UiTextUtil;
+import com.phungloccoffee.offline.NetworkMonitor;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -23,17 +25,20 @@ public class TopbarController {
     @FXML private Label pageTitleLabel;
     @FXML private Label contextLabel;
     @FXML private Label timeLabel;
-    @FXML private Label statusBadgeLabel;
+    @FXML private Label connectionStatusLabel;
     @FXML private HBox actionContainer;
     @FXML private StackPane breadcrumbIconContainer;
     @FXML private VBox topbarLeft;
     @FXML private HBox breadcrumbRow;
 
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+    private final NetworkMonitor networkMonitor = NetworkMonitor.getInstance();
 
     @FXML
     private void initialize() {
-        statusBadgeLabel.setText("Online");
+        networkMonitor.addListener(online -> Platform.runLater(() -> updateConnectionStatus(online)));
+        networkMonitor.start();
+        updateConnectionStatus(networkMonitor.isOnline());
         breadcrumbIconContainer.getChildren().setAll(IconFactory.createTopbarIcon("breadcrumb-home"));
         updateClock();
         Timeline clock = new Timeline(new KeyFrame(Duration.seconds(30), event -> updateClock()));
@@ -74,5 +79,11 @@ public class TopbarController {
 
     private void updateClock() {
         timeLabel.setText(LocalDateTime.now().format(timeFormatter));
+    }
+
+    private void updateConnectionStatus(boolean online) {
+        connectionStatusLabel.setText(online ? "Trực tuyến" : "Ngoại tuyến");
+        connectionStatusLabel.getStyleClass().removeAll("status-online", "status-offline", "status-checking");
+        connectionStatusLabel.getStyleClass().add(online ? "status-online" : "status-offline");
     }
 }

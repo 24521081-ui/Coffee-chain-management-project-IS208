@@ -24,5 +24,5 @@
     <HBox fx:id="actionContainer" alignment="CENTER" spacing="10" />
     <Label fx:id="contextLabel" styleClass="context-label" />
     <Label fx:id="timeLabel" styleClass="time-label" />
-    <Label fx:id="statusBadgeLabel" text="Online" styleClass="status-badge" />
+    <Label fx:id="connectionStatusLabel" text="Đang kiểm tra..." styleClass="status-badge" />
 </HBox>

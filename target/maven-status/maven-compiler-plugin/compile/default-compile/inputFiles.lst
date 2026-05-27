@@ -23,6 +23,7 @@ D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-proj
 D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\dao\KiemKeKhoDAO.java
 D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\dao\NhanVienDAO.java
 D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\dao\OrderDAO.java
+D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\dao\OrderDetailToppingDAO.java
 D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\dao\PaymentDAO.java
 D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\dao\PhieuNhapKhoDAO.java
 D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\dao\PhieuXuatKhoDAO.java
@@ -115,6 +116,7 @@ D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-proj
 D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\model\offline\OfflineOrderDetail.java
 D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\model\Order.java
 D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\model\OrderDetail.java
+D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\model\OrderDetailTopping.java
 D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\model\Payment.java
 D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\model\PaymentHistory.java
 D:\24521045-2025-2026-Hk2\ProjectManager\DesktopApp\Coffee-chain-management-project-IS208\src\main\java\com\phungloccoffee\model\PhieuDieuChuyenKho.java
