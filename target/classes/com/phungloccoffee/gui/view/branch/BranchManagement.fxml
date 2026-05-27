@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
@@ -9,46 +11,56 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx/21"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.phungloccoffee.gui.controller.branch.BranchManagementController"
-      styleClass="page-root">
-    <HBox styleClass="filter-card report-controls-row">
-        <TextField fx:id="searchField" promptText="Tìm chi nhánh, khu vực..." prefWidth="300" styleClass="page-input" />
-        <ComboBox fx:id="areaFilterComboBox" promptText="Khu vực" prefWidth="170" styleClass="page-combo" />
-        <ComboBox fx:id="statusFilterComboBox" promptText="Trạng thái" prefWidth="160" styleClass="page-combo" />
-        <Region HBox.hgrow="ALWAYS" />
-    </HBox>
+<VBox styleClass="page-root" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.phungloccoffee.gui.controller.branch.BranchManagementController">
+    <VBox styleClass="filter-card branch-filter-card">
+        <HBox styleClass="report-controls-row branch-filter-row">
+            <TextField fx:id="searchField" prefHeight="26.0" prefWidth="345.0" promptText="Tìm chi nhánh, khu vực..." styleClass="filter-input branch-search-filter" />
+            <ComboBox fx:id="areaFilterComboBox" prefWidth="210" promptText="Khu vực" styleClass="filter-combo branch-area-filter" />
+            <ComboBox fx:id="statusFilterComboBox" prefWidth="210" promptText="Trạng thái" styleClass="filter-combo branch-status-filter" />
+            <Region HBox.hgrow="ALWAYS" />
+        </HBox>
+        <HBox styleClass="report-controls-row branch-time-filter-row">
+            <ComboBox fx:id="periodTypeComboBox" prefWidth="160" promptText="Loại thời gian" styleClass="filter-combo branch-period-type" />
+            <DatePicker fx:id="periodDatePicker" prefWidth="185" promptText="Chọn tháng/năm" styleClass="filter-date branch-period-date" />
+            <Button onAction="#applyTimeFilter" prefWidth="112" styleClass="filter-apply-button branch-apply-filter-button" text="Áp dụng" />
+            <Label fx:id="periodScopeLabel" prefHeight="26.0" prefWidth="310.0" styleClass="period-badge branch-period-label" text="    Kỳ dữ liệu: Tháng hiện tại" />
+            <Region HBox.hgrow="ALWAYS" />
+        </HBox>
+    </VBox>
 
     <HBox styleClass="stats-row">
-        <VBox HBox.hgrow="ALWAYS" styleClass="metric-card">
-            <Label text="Tổng chi nhánh" styleClass="metric-label" />
-            <Label text="8" styleClass="metric-value" />
+        <VBox styleClass="metric-card" HBox.hgrow="ALWAYS">
+            <Label styleClass="metric-label" text="Tổng chi nhánh" />
+            <Label fx:id="totalBranchLabel" styleClass="metric-value" text="0" />
         </VBox>
-        <VBox HBox.hgrow="ALWAYS" styleClass="metric-card">
-            <Label text="Đang hoạt động" styleClass="metric-label" />
-            <Label text="7" styleClass="metric-value" />
+        <VBox styleClass="metric-card" HBox.hgrow="ALWAYS">
+            <Label styleClass="metric-label" text="Đang hoạt động" />
+            <Label fx:id="activeBranchLabel" styleClass="metric-value" text="0" />
         </VBox>
-        <VBox HBox.hgrow="ALWAYS" styleClass="metric-card">
-            <Label text="Tạm dừng" styleClass="metric-label" />
-            <Label text="1" styleClass="metric-value" />
+        <VBox styleClass="metric-card" HBox.hgrow="ALWAYS">
+            <Label styleClass="metric-label" text="Tạm dừng" />
+            <Label fx:id="pausedBranchLabel" styleClass="metric-value" text="0" />
         </VBox>
     </HBox>
 
     <VBox styleClass="table-card" VBox.vgrow="ALWAYS">
-        <VBox spacing="4">
-            <Label text="Danh sách chi nhánh" styleClass="section-title" />
-            <Label text="Quản lý thông tin vận hành từng điểm bán" styleClass="section-subtitle" />
-        </VBox>
-        <TableView fx:id="branchTable" prefHeight="520" VBox.vgrow="ALWAYS" styleClass="page-table">
+        <HBox alignment="CENTER_LEFT" spacing="16">
+            <VBox spacing="4">
+                <Label styleClass="section-title" text="Danh sách chi nhánh" />
+                <Label styleClass="section-subtitle" text="Quản lý thông tin vận hành từng điểm bán" />
+            </VBox>
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="addBranchButton" onAction="#showAddBranchDialog" styleClass="primary-action-button branch-add-button" text="+ Thêm chi nhánh" />
+        </HBox>
+        <TableView fx:id="branchTable" prefHeight="520" styleClass="page-table" VBox.vgrow="ALWAYS">
             <columns>
-                <TableColumn fx:id="branchCodeColumn" text="Mã CN" prefWidth="90" />
-                <TableColumn fx:id="branchNameColumn" text="Chi nhánh" prefWidth="220" />
-                <TableColumn fx:id="areaColumn" text="Khu vực" prefWidth="140" />
-                <TableColumn fx:id="managerColumn" text="Quản lý" prefWidth="180" />
-                <TableColumn fx:id="phoneColumn" text="Điện thoại" prefWidth="140" />
-                <TableColumn fx:id="statusColumn" text="Trạng thái" prefWidth="140" />
-                <TableColumn fx:id="actionColumn" text="Thao tác" prefWidth="230" />
+                <TableColumn fx:id="branchCodeColumn" prefWidth="90" text="Mã CN" />
+                <TableColumn fx:id="branchNameColumn" prefWidth="220" text="Chi nhánh" />
+                <TableColumn fx:id="areaColumn" prefWidth="140" text="Khu vực" />
+                <TableColumn fx:id="managerColumn" prefWidth="180" text="Quản lý" />
+                <TableColumn fx:id="phoneColumn" prefWidth="140" text="Điện thoại" />
+                <TableColumn fx:id="statusColumn" prefWidth="140" text="Trạng thái" />
+                <TableColumn fx:id="actionColumn" prefWidth="260" text="Thao tác" />
             </columns>
         </TableView>
     </VBox>

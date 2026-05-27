@@ -17,71 +17,75 @@
 <VBox xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.phungloccoffee.gui.controller.report.RevenueReportController"
-      styleClass="page-root">
-    <HBox styleClass="filter-card report-controls-row">
+      styleClass="page-root revenue-report-root">
+    <HBox styleClass="filter-card report-controls-row revenue-filter-row">
         <HBox styleClass="period-tabs">
-            <Button text="Ngày" styleClass="period-tab" />
-            <Button text="Tháng" styleClass="period-tab period-tab-active" />
-            <Button text="Quý" styleClass="period-tab" />
-            <Button text="Năm" styleClass="period-tab" />
+            <Button fx:id="dayPeriodButton" text="Ngày" onAction="#selectDayPeriod" styleClass="period-tab" />
+            <Button fx:id="monthPeriodButton" text="Tháng" onAction="#selectMonthPeriod" styleClass="period-tab" />
+            <Button fx:id="quarterPeriodButton" text="Quý" onAction="#selectQuarterPeriod" styleClass="period-tab" />
+            <Button fx:id="yearPeriodButton" text="Năm" onAction="#selectYearPeriod" styleClass="period-tab" />
         </HBox>
         <Region HBox.hgrow="ALWAYS" />
-        <ComboBox fx:id="branchFilterComboBox" prefWidth="220" styleClass="page-combo" />
-        <DatePicker fx:id="fromDatePicker" prefWidth="170" styleClass="page-date" />
-        <DatePicker fx:id="toDatePicker" prefWidth="170" styleClass="page-date" />
-        <Button text="Xem báo cáo" onAction="#loadReport" styleClass="primary-button" />
+        <ComboBox fx:id="branchFilterComboBox" prefWidth="210" styleClass="page-combo revenue-filter-combo" />
+        <ComboBox fx:id="monthComboBox" promptText="Tháng" prefWidth="95" styleClass="page-combo revenue-filter-combo" />
+        <ComboBox fx:id="quarterComboBox" promptText="Quý" prefWidth="85" styleClass="page-combo revenue-filter-combo" />
+        <ComboBox fx:id="yearComboBox" promptText="Năm" prefWidth="95" styleClass="page-combo revenue-filter-combo" />
+        <DatePicker fx:id="fromDatePicker" prefWidth="150" promptText="Từ ngày" styleClass="page-date revenue-filter-date" />
+        <DatePicker fx:id="toDatePicker" prefWidth="150" promptText="Đến ngày" styleClass="page-date revenue-filter-date" />
+        <Button text="Xem báo cáo" onAction="#loadReport" styleClass="primary-button revenue-report-button" />
+        <Button text="Xuất báo cáo" onAction="#exportReport" styleClass="secondary-button revenue-report-button" />
     </HBox>
 
     <HBox styleClass="kpi-row">
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-blue">
             <Label text="Tổng doanh thu" styleClass="kpi-label" />
-            <Label text="2.8B" styleClass="kpi-value" />
-            <Label text="+14%" styleClass="kpi-badge-up" />
+            <Label fx:id="totalRevenueValue" text="0M" styleClass="kpi-value" />
+            <Label fx:id="revenueGrowthBadge" text="0%" styleClass="kpi-badge-neutral" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-green">
             <Label text="Tổng đơn hàng" styleClass="kpi-label" />
-            <Label text="18.420" styleClass="kpi-value" />
-            <Label text="+9%" styleClass="kpi-badge-up" />
+            <Label fx:id="totalOrdersValue" text="0" styleClass="kpi-value" />
+            <Label fx:id="ordersBadge" text="Từ Oracle" styleClass="kpi-badge-neutral" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-orange">
             <Label text="Giá trị TB/đơn" styleClass="kpi-label" />
-            <Label text="152K" styleClass="kpi-value" />
-            <Label text="+4%" styleClass="kpi-badge-up" />
+            <Label fx:id="averageOrderValue" text="0K" styleClass="kpi-value" />
+            <Label fx:id="averageBadge" text="Tính từ doanh thu gốc" styleClass="kpi-badge-neutral" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-red">
             <Label text="Tăng trưởng" styleClass="kpi-label" />
-            <Label text="+14%" styleClass="kpi-value" />
-            <Label text="So với tháng trước" styleClass="kpi-badge-up" />
+            <Label fx:id="growthValue" text="0%" styleClass="kpi-value" />
+            <Label fx:id="growthBadge" text="So với kỳ trước" styleClass="kpi-badge-neutral" />
         </VBox>
     </HBox>
 
     <HBox styleClass="chart-row">
         <VBox HBox.hgrow="ALWAYS" styleClass="chart-card chart-card-large">
             <VBox spacing="4">
-                <Label text="Xu hướng doanh thu toàn hệ thống" styleClass="section-title" />
-                <Label text="Theo tuần trong tháng 07/2026" styleClass="section-subtitle" />
+                <Label fx:id="trendTitleLabel" text="Xu hướng doanh thu toàn hệ thống" styleClass="section-title" />
+                <Label fx:id="trendSubtitleLabel" text="Theo kỳ dữ liệu đã chọn" styleClass="section-subtitle" />
             </VBox>
             <LineChart fx:id="revenueTrendChart" animated="false" legendVisible="false" prefHeight="300" styleClass="report-chart">
                 <xAxis>
-                    <CategoryAxis label="Tuần" />
+                    <CategoryAxis label="Kỳ" />
                 </xAxis>
                 <yAxis>
-                    <NumberAxis label="Doanh thu (M)" />
+                    <NumberAxis />
                 </yAxis>
             </LineChart>
         </VBox>
 
         <VBox HBox.hgrow="ALWAYS" styleClass="chart-card">
             <VBox spacing="4">
-                <Label text="Top chi nhánh doanh thu" styleClass="section-title" />
-                <Label text="So sánh doanh thu theo chi nhánh" styleClass="section-subtitle" />
+                <Label fx:id="branchChartTitleLabel" text="Top chi nhánh doanh thu" styleClass="section-title" />
+                <Label fx:id="branchChartSubtitleLabel" text="So sánh doanh thu theo chi nhánh" styleClass="section-subtitle" />
             </VBox>
-            <BarChart fx:id="branchRevenueChart" animated="false" legendVisible="false" prefHeight="300" styleClass="report-chart">
+            <BarChart fx:id="branchRevenueChart" animated="false" legendVisible="false" prefHeight="350" styleClass="report-chart">
                 <xAxis>
                     <CategoryAxis label="Chi nhánh" />
                 </xAxis>
                 <yAxis>
-                    <NumberAxis label="Doanh thu (M)" />
+                    <NumberAxis />
                 </yAxis>
             </BarChart>
         </VBox>
