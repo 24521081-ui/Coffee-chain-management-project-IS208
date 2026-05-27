@@ -1,6 +1,7 @@
 package com.phungloccoffee.dao;
 
 import com.phungloccoffee.exception.DatabaseException;
+import com.phungloccoffee.model.WarehouseSlipStatus;
 import com.phungloccoffee.model.WarehouseTransaction;
 import com.phungloccoffee.model.WarehouseTransactionDetail;
 import com.phungloccoffee.util.DBConnection;
@@ -17,7 +18,7 @@ public class WarehouseTransactionDAO {
         String sql = """
                 INSERT INTO phieu_xuat_kho (phieu_xuat_id, kho_id, nhan_vien_id, ngay_xuat, ly_do_xuat,
                                             so_luong_mat_hang, tong_tien, trang_thai, ghi_chu)
-                VALUES (?, ?, ?, SYSTIMESTAMP, ?, ?, 0, 'NHAP', ?)
+                VALUES (?, ?, ?, SYSTIMESTAMP, ?, ?, 0, ?, ?)
                 """;
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -26,10 +27,11 @@ public class WarehouseTransactionDAO {
             stmt.setString(3, String.valueOf(transaction.getCreatedBy()));
             stmt.setString(4, transaction.getTransactionType());
             stmt.setInt(5, details == null ? 0 : details.size());
-            stmt.setString(6, "Tạo từ màn kho");
+            stmt.setString(6, WarehouseSlipStatus.PENDING_APPROVAL);
+            stmt.setString(7, "Tao tu man kho");
             stmt.executeUpdate();
         } catch (SQLException e) {
-            throw new DatabaseException("Không thể tạo phiếu kho.", e);
+            throw new DatabaseException("Khong the tao phieu kho.", e);
         }
     }
 
@@ -37,27 +39,29 @@ public class WarehouseTransactionDAO {
         String sql = """
                 SELECT px.phieu_xuat_id, px.kho_id, px.trang_thai, px.nhan_vien_id, px.ngay_xuat
                 FROM phieu_xuat_kho px
-                WHERE px.trang_thai = 'NHAP'
+                WHERE px.trang_thai = ?
                 ORDER BY px.ngay_xuat DESC
                 """;
         List<WarehouseTransaction> transactions = new ArrayList<>();
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                transactions.add(new WarehouseTransaction(
-                        0,
-                        rs.getString("phieu_xuat_id"),
-                        "EXPORT",
-                        rs.getString("kho_id"),
-                        rs.getString("trang_thai"),
-                        0,
-                        rs.getTimestamp("ngay_xuat") == null ? null : rs.getTimestamp("ngay_xuat").toLocalDateTime()
-                ));
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, WarehouseSlipStatus.PENDING_APPROVAL);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    transactions.add(new WarehouseTransaction(
+                            0,
+                            rs.getString("phieu_xuat_id"),
+                            "EXPORT",
+                            rs.getString("kho_id"),
+                            rs.getString("trang_thai"),
+                            0,
+                            rs.getTimestamp("ngay_xuat") == null ? null : rs.getTimestamp("ngay_xuat").toLocalDateTime()
+                    ));
+                }
             }
             return transactions;
         } catch (SQLException e) {
-            throw new DatabaseException("Không thể tải phiếu xuất chờ duyệt.", e);
+            throw new DatabaseException("Khong the tai phieu xuat cho duyet.", e);
         }
     }
 
@@ -88,7 +92,7 @@ public class WarehouseTransactionDAO {
             stmt.setString(2, phieuXuatId);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            throw new DatabaseException("Không thể cập nhật trạng thái phiếu kho.", e);
+            throw new DatabaseException("Khong the cap nhat trang thai phieu kho.", e);
         }
     }
 }

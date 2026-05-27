@@ -24,10 +24,10 @@ public class DBConnection {
 
     public static Connection getConnection() throws SQLException {
         if (isBlank(USERNAME)) {
-            throw new SQLException("Thiếu database username. Vui lòng nhập db.username trong config.properties.");
+            throw new SQLException("Thiáº¿u database username. Vui lÃ²ng nháº­p db.username trong config.properties.");
         }
         if (isBlank(PASSWORD)) {
-            throw new SQLException("Thiếu database password. Vui lòng nhập db.password trong config.properties.");
+            throw new SQLException("Thiáº¿u database password. Vui lÃ²ng nháº­p db.password trong config.properties.");
         }
         return DriverManager.getConnection(URL, USERNAME, PASSWORD);
     }

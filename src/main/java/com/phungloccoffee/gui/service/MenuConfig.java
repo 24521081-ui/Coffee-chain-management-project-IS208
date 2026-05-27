@@ -32,6 +32,7 @@ public final class MenuConfig {
                     item("BRANCH_DASHBOARD", "Dashboard chi nhánh", "⌂", "Chi nhánh > Dashboard", "Dashboard chi nhánh", "/com/phungloccoffee/gui/view/dashboard/BranchDashboard.fxml"),
                     item("APPROVE_IMPORT", "Duyệt nhập kho", "↧", "Chi nhánh > Kho > Duyệt nhập kho", "Duyệt nhập kho", "/com/phungloccoffee/gui/view/inventory/ImportApproval.fxml"),
                     item("APPROVE_EXPORT", "Duyệt xuất kho", "↤", "Chi nhánh > Kho > Duyệt xuất kho", "Duyệt xuất kho", "/com/phungloccoffee/gui/view/inventory/ExportApproval.fxml"),
+                    item("APPROVE_STOCKTAKE", "Duyệt kiểm kê kho", "▣", "Chi nhánh > Kho > Duyệt kiểm kê", "Duyệt kiểm kê kho", "/com/phungloccoffee/gui/view/inventory/StocktakeApproval.fxml"),
                     item("APPROVE_TRANSFER", "Duyệt điều chuyển kho", "⇄", "Chi nhánh > Kho > Duyệt điều chuyển", "Duyệt điều chuyển kho", "/com/phungloccoffee/gui/view/inventory/TransferApproval.fxml"),
                     item("APPROVE_MATERIAL_LOSS", "Duyệt hao hụt nguyên liệu", "!", "Chi nhánh > Kho > Duyệt hao hụt", "Duyệt hao hụt nguyên liệu", "/com/phungloccoffee/gui/view/inventory/MaterialLossApproval.fxml"),
                     item("BRANCH_EMPLOYEE", "Nhân viên chi nhánh", "◎", "Chi nhánh > Nhân viên", "Nhân viên chi nhánh", "/com/phungloccoffee/gui/view/employee/BranchEmployeeList.fxml"),

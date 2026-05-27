@@ -4,6 +4,7 @@ import com.phungloccoffee.dao.WarehouseTransactionDAO;
 import com.phungloccoffee.exception.DatabaseException;
 import com.phungloccoffee.exception.PermissionException;
 import com.phungloccoffee.exception.ValidationException;
+import com.phungloccoffee.model.WarehouseSlipStatus;
 import com.phungloccoffee.model.WarehouseTransaction;
 
 import java.util.List;
@@ -17,19 +18,19 @@ public class ExportApprovalBUS extends PermissionBUS {
     }
 
     public void approve(int transactionId) throws ValidationException, PermissionException, DatabaseException {
-        updateStatus(String.valueOf(transactionId), "DA_DUYET");
+        updateStatus(String.valueOf(transactionId), WarehouseSlipStatus.APPROVED);
     }
 
     public void approve(String transactionId) throws ValidationException, PermissionException, DatabaseException {
-        updateStatus(transactionId, "DA_DUYET");
+        updateStatus(transactionId, WarehouseSlipStatus.APPROVED);
     }
 
     public void reject(int transactionId) throws ValidationException, PermissionException, DatabaseException {
-        updateStatus(String.valueOf(transactionId), "DA_HUY");
+        updateStatus(String.valueOf(transactionId), WarehouseSlipStatus.REJECTED);
     }
 
     public void reject(String transactionId) throws ValidationException, PermissionException, DatabaseException {
-        updateStatus(transactionId, "DA_HUY");
+        updateStatus(transactionId, WarehouseSlipStatus.REJECTED);
     }
 
     private void updateStatus(String transactionId, String status) throws ValidationException, PermissionException, DatabaseException {

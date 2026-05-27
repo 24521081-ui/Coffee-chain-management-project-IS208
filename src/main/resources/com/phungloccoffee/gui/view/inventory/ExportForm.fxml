@@ -25,7 +25,7 @@
         <VBox styleClass="form-card" spacing="18">
             <VBox spacing="4">
                 <Label text="Thông tin phiếu xuất" styleClass="section-title" />
-                <Label text="Khai báo lý do xuất, nơi nhận và chứng từ liên quan" styleClass="section-subtitle" />
+                <Label text="Khai báo lý do xuất, nơi nhận và số lượng phiếu." styleClass="section-subtitle" />
             </VBox>
             <GridPane styleClass="form-grid">
                 <Label text="Mã phiếu" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0" />
@@ -38,8 +38,8 @@
                 <TextField fx:id="createdByField" text="Nhân viên kho" prefWidth="230" styleClass="page-input" GridPane.columnIndex="3" GridPane.rowIndex="1" />
                 <Label text="Bộ phận/chi nhánh nhận" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="2" />
                 <TextField fx:id="receiverField" text="Quầy pha chế CN001" prefWidth="230" styleClass="page-input" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                <Label text="File chứng từ" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="2" />
-                <TextField fx:id="attachmentField" promptText="export_072026.pdf" prefWidth="230" styleClass="page-input" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+                <Label text="Số lượng" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                <TextField fx:id="totalQuantityField" promptText="Tự động tính theo chi tiết" prefWidth="230" styleClass="page-input" GridPane.columnIndex="3" GridPane.rowIndex="2" />
                 <Label text="Ghi chú" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="3" />
                 <TextArea fx:id="noteArea" prefRowCount="2" promptText="Ghi chú nội bộ..." wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.columnSpan="3" />
             </GridPane>

@@ -25,7 +25,7 @@
         <VBox styleClass="form-card" spacing="18">
             <VBox spacing="4">
                 <Label text="Thông tin phiếu nhập" styleClass="section-title" />
-                <Label text="Khai báo nhà cung cấp, chứng từ và người lập phiếu" styleClass="section-subtitle" />
+                <Label text="Khai báo nhà cung cấp, chứng từ, số lượng và người lập phiếu" styleClass="section-subtitle" />
             </VBox>
             <GridPane styleClass="form-grid">
                 <Label text="Mã phiếu" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0" />
@@ -36,10 +36,12 @@
                 <ComboBox fx:id="supplierComboBox" prefWidth="230" styleClass="page-combo" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                 <Label text="Người lập" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="1" />
                 <TextField fx:id="createdByField" text="Nhân viên kho" prefWidth="230" styleClass="page-input" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                <Label text="File chứng từ" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                <TextField fx:id="attachmentField" promptText="invoice_072026.pdf" prefWidth="230" styleClass="page-input" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                <Label text="Ghi chú" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="2" />
-                <TextArea fx:id="noteArea" prefRowCount="2" promptText="Ghi chú nội bộ..." wrapText="true" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+                <Label text="Chứng từ" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                <TextField fx:id="attachmentField" promptText="Nhập số chứng từ / mô tả chứng từ" prefWidth="230" styleClass="page-input" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                <Label text="Số lượng" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                <TextField fx:id="totalQuantityField" promptText="Có thể nhập hoặc để hệ thống tự tính" prefWidth="230" styleClass="page-input" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+                <Label text="Ghi chú" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                <TextArea fx:id="noteArea" prefRowCount="2" promptText="Ghi chú nội bộ..." wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.columnSpan="3" />
             </GridPane>
         </VBox>
 
@@ -47,7 +49,7 @@
             <HBox alignment="CENTER_LEFT" spacing="12">
                 <VBox spacing="4">
                     <Label text="Chọn nguyên liệu nhập" styleClass="section-title" />
-                    <Label text="Click chọn nguyên liệu rồi thêm vào chi tiết phiếu nhập" styleClass="section-subtitle" />
+                    <Label text="Chọn nguyên liệu rồi thêm vào chi tiết phiếu nhập" styleClass="section-subtitle" />
                 </VBox>
                 <Region HBox.hgrow="ALWAYS" />
                 <TextField fx:id="materialSearchField" promptText="Tìm sản phẩm/nguyên liệu..." prefWidth="260" styleClass="page-input" />
@@ -68,7 +70,7 @@
             <HBox alignment="CENTER_LEFT" spacing="12">
                 <VBox spacing="4">
                     <Label text="Chi tiết phiếu nhập" styleClass="section-title" />
-                    <Label text="Sửa số lượng trực tiếp trong bảng để cập nhật thành tiền" styleClass="section-subtitle" />
+                    <Label text="Sửa số lượng và đơn giá trực tiếp trong bảng để cập nhật thành tiền" styleClass="section-subtitle" />
                 </VBox>
                 <Region HBox.hgrow="ALWAYS" />
                 <Label text="Tổng tiền:" styleClass="section-subtitle" />
@@ -91,7 +93,7 @@
             <Region HBox.hgrow="ALWAYS" />
             <Button text="Hủy" onAction="#cancelForm" styleClass="danger-button" />
             <Button text="Lưu nháp" onAction="#saveDraft" styleClass="secondary-button" />
-            <Button text="Lưu phiếu nhập" onAction="#saveImport" styleClass="primary-button" />
+            <Button text="Gửi duyệt phiếu nhập" onAction="#saveImport" styleClass="primary-button" />
         </HBox>
     </VBox>
 </ScrollPane>
