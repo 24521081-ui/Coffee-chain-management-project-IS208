@@ -18,10 +18,13 @@
       fx:controller="com.phungloccoffee.gui.controller.dashboard.DirectorDashboardController"
       styleClass="page-root">
     <HBox styleClass="filter-card report-controls-row revenue-filter-row">
-        <DatePicker fx:id="fromDatePicker" prefWidth="170" promptText="Từ ngày" styleClass="page-date revenue-filter-date" />
-        <DatePicker fx:id="toDatePicker" prefWidth="170" promptText="Đến ngày" styleClass="page-date revenue-filter-date" />
+        <ComboBox fx:id="periodTypeComboBox" promptText="Kỳ dữ liệu" prefWidth="150" styleClass="page-combo revenue-filter-combo" />
+        <DatePicker fx:id="fromDatePicker" prefWidth="150" promptText="Từ ngày" styleClass="page-date revenue-filter-date" />
+        <DatePicker fx:id="toDatePicker" prefWidth="150" promptText="Đến ngày" styleClass="page-date revenue-filter-date" />
+        <ComboBox fx:id="monthComboBox" promptText="Tháng" prefWidth="110" styleClass="page-combo revenue-filter-combo" />
+        <ComboBox fx:id="yearComboBox" promptText="Năm" prefWidth="110" styleClass="page-combo revenue-filter-combo" />
         <ComboBox fx:id="branchFilterComboBox" promptText="Chi nhánh" prefWidth="220" styleClass="page-combo revenue-filter-combo" />
-        <Button text="Xem báo cáo" onAction="#loadDashboard" styleClass="primary-button revenue-report-button" />
+        <Button text="Tải lại" onAction="#loadDashboard" styleClass="primary-button revenue-report-button" />
         <Region HBox.hgrow="ALWAYS" />
     </HBox>
 
@@ -29,22 +32,22 @@
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-blue">
             <Label text="Tổng doanh thu" styleClass="kpi-label" />
             <Label fx:id="revenueValue" text="0M" styleClass="kpi-value" />
-            <Label text="+12%" styleClass="kpi-badge-up" />
+            <Label fx:id="revenueChangeLabel" text="0%" styleClass="kpi-badge-neutral" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-green">
             <Label text="Đơn hàng" styleClass="kpi-label" />
             <Label fx:id="orderValue" text="0" styleClass="kpi-value" />
-            <Label text="+8%" styleClass="kpi-badge-up" />
+            <Label fx:id="orderChangeLabel" text="0%" styleClass="kpi-badge-neutral" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-orange">
             <Label text="Sản phẩm bán ra" styleClass="kpi-label" />
             <Label fx:id="productValue" text="0" styleClass="kpi-value" />
-            <Label text="Trong tuần demo" styleClass="kpi-badge-neutral" />
+            <Label fx:id="productChangeLabel" text="0%" styleClass="kpi-badge-neutral" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-red">
             <Label text="Cảnh báo tồn kho" styleClass="kpi-label" />
             <Label fx:id="alertValue" text="0" styleClass="kpi-value" />
-            <Label text="Cần xử lý" styleClass="kpi-badge-danger" />
+            <Label fx:id="alertStatusLabel" text="Tốt" styleClass="kpi-badge-neutral" />
         </VBox>
     </HBox>
 
@@ -52,7 +55,7 @@
         <VBox HBox.hgrow="ALWAYS" styleClass="chart-card chart-card-large">
             <VBox spacing="4">
                 <Label text="Doanh thu theo ngày" styleClass="section-title" />
-                <Label text="Đơn vị: triệu đồng trong tuần demo" styleClass="section-subtitle" />
+                <Label fx:id="chartSubtitleLabel" text="Đơn vị: triệu đồng theo kỳ dữ liệu" styleClass="section-subtitle" />
             </VBox>
             <BarChart fx:id="branchRevenueChart"
                       animated="false"
@@ -79,7 +82,7 @@
                 <Label fx:id="periodInfo" text="-" styleClass="status-badge status-success" />
             </HBox>
             <HBox>
-                <Label text="Chi nhánh dẫn đầu" styleClass="report-list-label" />
+                <Label fx:id="branchOverviewTitle" text="Chi nhánh dẫn đầu" styleClass="report-list-label" />
                 <Region HBox.hgrow="ALWAYS" />
                 <Label fx:id="topBranchInfo" text="-" styleClass="status-badge status-info" />
             </HBox>

@@ -408,6 +408,12 @@ public class BranchManagementController {
         TextField addressField = textField(updateMode ? branch.getAddress() : "", "Địa chỉ");
         TextField phoneField = textField(updateMode ? branch.getPhone() : "", "Số điện thoại");
         TextField managerField = textField(updateMode ? branch.getManager() : "", "Người quản lý");
+        areaField.setText(updateMode ? branch.getArea() : deriveAreaFromAddress(addressField.getText()));
+        areaField.setEditable(false);
+        areaField.getStyleClass().add("readonly-code-field");
+        addressField.textProperty().addListener((observable, oldValue, newValue) ->
+                areaField.setText(deriveAreaFromAddress(newValue)));
+
         DatePicker openingDatePicker = new DatePicker(updateMode ? branch.getOpeningDate() : LocalDate.now());
         openingDatePicker.getStyleClass().add("page-date");
         ComboBox<String> statusCombo = new ComboBox<>(FXCollections.observableArrayList(STATUS_ACTIVE, STATUS_PAUSED));
@@ -452,8 +458,8 @@ public class BranchManagementController {
     private BranchRow readBranchForm(BranchFormFields fields, BranchRow originalBranch) {
         String code = originalBranch == null ? generateNextBranchCode() : originalBranch.getCode();
         String name = safe(fields.nameField().getText());
-        String area = safe(fields.areaField().getText());
         String address = safe(fields.addressField().getText());
+        String area = deriveAreaFromAddress(address);
         String phone = safe(fields.phoneField().getText());
         String manager = safe(fields.managerField().getText());
         LocalDate openingDate = fields.openingDatePicker().getValue();
@@ -467,8 +473,8 @@ public class BranchManagementController {
             AlertUtils.showWarning("Tên chi nhánh không được rỗng.");
             return null;
         }
-        if (area.isEmpty()) {
-            AlertUtils.showWarning("Khu vực không được rỗng.");
+        if (address.isEmpty()) {
+            AlertUtils.showWarning("Địa chỉ chi nhánh không được rỗng.");
             return null;
         }
         if (!isValidPhone(phone)) {
@@ -493,7 +499,7 @@ public class BranchManagementController {
         }
         LocalDate statusChangedDate = STATUS_PAUSED.equals(status) ? LocalDate.now() : null;
         return new BranchRow(code, name, area, address, phone, manager, "", "", openingDate, status,
-                statusChangedDate, note, 0, 12, 0, null, 0);
+                statusChangedDate, note, 0, 0, 0, null, 0);
     }
 
     private LocalDate resolveStatusChangedDate(BranchRow originalBranch, String status) {
@@ -712,6 +718,21 @@ public class BranchManagementController {
 
     private String safe(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private String deriveAreaFromAddress(String address) {
+        String value = safe(address);
+        if (value.isEmpty()) {
+            return "Chưa xác định";
+        }
+        String[] parts = value.split(",");
+        for (int i = parts.length - 1; i >= 0; i--) {
+            String part = safe(parts[i]);
+            if (!part.isEmpty()) {
+                return part;
+            }
+        }
+        return value;
     }
 
     private String readableError(Exception exception) {
