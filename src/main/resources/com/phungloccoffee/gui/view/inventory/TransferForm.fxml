@@ -17,36 +17,36 @@
       styleClass="page-root">
     <VBox styleClass="form-card" spacing="18">
         <VBox spacing="4">
-            <Label text="Thông tin điều chuyển" styleClass="section-title" />
-            <Label text="Chọn kho nguồn, kho đích và ghi chú vận chuyển" styleClass="section-subtitle" />
+            <Label text="Thông tin điều chuyển kho" styleClass="section-title" />
+            <Label text="Kho nguồn cố định theo chi nhánh hiện tại. Chọn kho đích và nhập số lượng điều chuyển thực tế." styleClass="section-subtitle" />
         </VBox>
         <GridPane styleClass="form-grid">
             <Label text="Kho nguồn" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-            <ComboBox fx:id="sourceComboBox" promptText="Chọn kho nguồn" prefWidth="240" styleClass="page-combo" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+            <ComboBox fx:id="sourceComboBox" promptText="Kho nguồn" prefWidth="260" styleClass="page-combo" GridPane.columnIndex="1" GridPane.rowIndex="0" />
             <Label text="Kho đích" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="0" />
-            <ComboBox fx:id="targetComboBox" promptText="Chọn kho đích" prefWidth="240" styleClass="page-combo" GridPane.columnIndex="3" GridPane.rowIndex="0" />
+            <ComboBox fx:id="targetComboBox" promptText="Chọn kho đích" prefWidth="260" styleClass="page-combo" GridPane.columnIndex="3" GridPane.rowIndex="0" />
             <Label text="Ghi chú" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-            <TextArea promptText="Thông tin vận chuyển..." prefRowCount="2" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="3" />
+            <TextArea fx:id="noteArea" promptText="Schema hiện tại chưa có cột lưu lý do điều chuyển, ô này chỉ phục vụ thao tác nhập liệu." prefRowCount="2" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="3" />
         </GridPane>
         <HBox styleClass="form-actions">
             <Region HBox.hgrow="ALWAYS" />
-            <Button text="Lưu phiếu điều chuyển" onAction="#saveTransfer" styleClass="primary-button" />
+            <Button text="Gửi duyệt điều chuyển" onAction="#saveTransfer" styleClass="primary-button" />
         </HBox>
     </VBox>
 
     <VBox styleClass="table-card" VBox.vgrow="ALWAYS">
         <VBox spacing="4">
             <Label text="Chi tiết điều chuyển" styleClass="section-title" />
-            <Label text="Nguyên liệu chuyển giữa các kho chi nhánh" styleClass="section-subtitle" />
+            <Label text="Chỉ các dòng có số lượng điều chuyển lớn hơn 0 mới được đưa vào phiếu." styleClass="section-subtitle" />
         </VBox>
-        <TableView fx:id="transferTable" prefHeight="430" VBox.vgrow="ALWAYS" styleClass="page-table">
+        <TableView fx:id="transferTable" editable="true" prefHeight="430" VBox.vgrow="ALWAYS" styleClass="page-table">
             <columns>
                 <TableColumn fx:id="codeColumn" text="Mã NL" prefWidth="110" />
                 <TableColumn fx:id="materialColumn" text="Nguyên liệu" prefWidth="240" />
                 <TableColumn fx:id="unitColumn" text="Đơn vị" prefWidth="100" />
-                <TableColumn fx:id="quantityColumn" text="Số lượng" prefWidth="130" />
-                <TableColumn fx:id="statusColumn" text="Tình trạng" prefWidth="140" />
-                <TableColumn fx:id="actionColumn" text="Thao tác" prefWidth="140" />
+                <TableColumn fx:id="quantityColumn" text="Tồn khả dụng" prefWidth="130" />
+                <TableColumn fx:id="requestQuantityColumn" text="SL điều chuyển" prefWidth="140" />
+                <TableColumn fx:id="statusColumn" text="Trạng thái" prefWidth="140" />
             </columns>
         </TableView>
     </VBox>

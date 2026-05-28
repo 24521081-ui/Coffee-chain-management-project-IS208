@@ -15,7 +15,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
@@ -33,6 +32,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 public class InventoryAuditController {
+    private static final double EXPLANATION_THRESHOLD_PERCENT = 2.0;
+
     @FXML private TextField auditCodeField;
     @FXML private DatePicker auditDatePicker;
     @FXML private TextField createdByField;
@@ -45,7 +46,7 @@ public class InventoryAuditController {
     @FXML private TableColumn<AuditRow, Double> actualColumn;
     @FXML private TableColumn<AuditRow, String> diffColumn;
     @FXML private TableColumn<AuditRow, String> noteColumn;
-    @FXML private TableColumn<AuditRow, Void> actionColumn;
+    @FXML private TableColumn<AuditRow, String> actionColumn;
 
     private final WarehouseWorkflowBUS workflowBUS = new WarehouseWorkflowBUS();
     private final ObservableList<AuditRow> auditRows = FXCollections.observableArrayList();
@@ -69,7 +70,12 @@ public class InventoryAuditController {
         });
         diffColumn.setCellValueFactory(new PropertyValueFactory<>("diffText"));
         noteColumn.setCellValueFactory(new PropertyValueFactory<>("note"));
-        actionColumn.setCellFactory(column -> new ExplanationCell());
+        noteColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        noteColumn.setOnEditCommit(event -> event.getRowValue().setNote(event.getNewValue() == null ? "" : event.getNewValue().trim()));
+        actionColumn.setCellValueFactory(new PropertyValueFactory<>("explanationRequirement"));
+        actionColumn.setCellFactory(column -> new ExplanationRequirementCell());
+
+        auditDetailTable.setEditable(true);
         auditDetailTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         auditDetailTable.setItems(auditRows);
 
@@ -82,7 +88,7 @@ public class InventoryAuditController {
             auditRows.setAll(materials.stream().map(AuditRow::from).toList());
         } catch (Exception e) {
             auditRows.setAll(
-                    new AuditRow("NL001", "Ca phe rang xay", "KG", 34, 34, ""),
+                    new AuditRow("NL001", "Cà phê rang xay", "KG", 34, 34, ""),
                     new AuditRow("NL002", "Sữa tươi không đường", "L", 12, 12, "")
             );
         }
@@ -124,25 +130,22 @@ public class InventoryAuditController {
         }
     }
 
-    private class ExplanationCell extends TableCell<AuditRow, Void> {
+    private static class ExplanationRequirementCell extends TableCell<AuditRow, String> {
         @Override
-        protected void updateItem(Void item, boolean empty) {
+        protected void updateItem(String item, boolean empty) {
             super.updateItem(item, empty);
-            if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+            if (empty || item == null) {
                 setGraphic(null);
+                setText(null);
                 return;
             }
-            AuditRow row = getTableRow().getItem();
-            Button button = new Button(row.requiresExplanation() ? "Nhập giải trình" : "Không cần");
-            button.getStyleClass().add(row.requiresExplanation() ? "secondary-button" : "action-button");
-            button.setDisable(!row.requiresExplanation());
-            button.setOnAction(event -> {
-                row.setNote("Chênh lệch lớn, đã được giải trình");
-                auditDetailTable.refresh();
-            });
-            HBox box = new HBox(button);
+            Label badge = new Label(item);
+            badge.getStyleClass().addAll("status-badge",
+                    "Bắt buộc".equals(item) ? "status-warning" : "status-success");
+            HBox box = new HBox(badge);
             box.setAlignment(Pos.CENTER_LEFT);
             setGraphic(box);
+            setText(null);
         }
     }
 
@@ -177,7 +180,15 @@ public class InventoryAuditController {
         public String getDiffText() { return trim(getActual() - system) + " " + getUnit(); }
         public String getNote() { return note.get(); }
         public void setNote(String value) { note.set(value); }
-        public boolean requiresExplanation() { return Math.abs(getActual() - system) > 10; }
+        public String getExplanationRequirement() { return requiresExplanation() ? "Bắt buộc" : "Không yêu cầu"; }
+
+        public boolean requiresExplanation() {
+            double delta = Math.abs(getActual() - system);
+            if (system <= 0) {
+                return delta > 0;
+            }
+            return (delta / system) * 100.0 > EXPLANATION_THRESHOLD_PERCENT;
+        }
 
         public WarehouseSlipLine toLine() {
             WarehouseSlipLine line = new WarehouseSlipLine();

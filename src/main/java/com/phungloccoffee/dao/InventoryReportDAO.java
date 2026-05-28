@@ -25,12 +25,12 @@ public class InventoryReportDAO {
                        sp.san_pham_id,
                        sp.ten_san_pham,
                        NVL(dm.ten_danh_muc, sp.loai_san_pham) AS category_name,
-                       tk.so_luong_ton,
-                       tk.muc_ton_toi_thieu,
-                       NVL(tk.so_luong_ton * sp.gia_von, 0) AS inventory_value,
+                       NVL(tk.so_luong_ton, 0) AS so_luong_ton,
+                       NVL(tk.muc_ton_toi_thieu, 0) AS muc_ton_toi_thieu,
+                       NVL(NVL(tk.so_luong_ton, 0) * NVL(sp.gia_von, 0), 0) AS inventory_value,
                        CASE
-                           WHEN tk.so_luong_ton <= 0 THEN 'Hết hàng'
-                           WHEN tk.so_luong_ton < tk.muc_ton_toi_thieu THEN 'Tồn thấp'
+                           WHEN NVL(tk.so_luong_ton, 0) <= 0 THEN 'Hết hàng'
+                           WHEN NVL(tk.so_luong_ton, 0) < NVL(tk.muc_ton_toi_thieu, 0) THEN 'Tồn thấp'
                            ELSE 'Ổn định'
                        END AS stock_status
                 FROM ton_kho tk
@@ -38,17 +38,18 @@ public class InventoryReportDAO {
                 JOIN chi_nhanh cn ON cn.chi_nhanh_id = k.chi_nhanh_id
                 JOIN san_pham sp ON sp.san_pham_id = tk.san_pham_id
                 LEFT JOIN danh_muc_san_pham dm ON dm.danh_muc_id = sp.danh_muc_id
-                WHERE tk.last_updated < ?
+                WHERE NVL(tk.last_updated, SYSTIMESTAMP) < ?
                   AND (? IS NULL OR ? = '' OR cn.chi_nhanh_id = ?)
-                  AND (? IS NULL OR ? = ? OR dm.ten_danh_muc = ?)
+                  AND (? IS NULL OR ? = ? OR NVL(dm.ten_danh_muc, sp.loai_san_pham) = ?)
                   AND (
                       ? IS NULL OR ? = ?
-                      OR (? = 'Hết hàng' AND tk.so_luong_ton <= 0)
-                      OR (? = 'Tồn thấp' AND tk.so_luong_ton > 0 AND tk.so_luong_ton < tk.muc_ton_toi_thieu)
-                      OR (? = 'Ổn định' AND tk.so_luong_ton >= tk.muc_ton_toi_thieu)
+                      OR (? = 'Hết hàng' AND NVL(tk.so_luong_ton, 0) <= 0)
+                      OR (? = 'Tồn thấp' AND NVL(tk.so_luong_ton, 0) > 0 AND NVL(tk.so_luong_ton, 0) < NVL(tk.muc_ton_toi_thieu, 0))
+                      OR (? = 'Ổn định' AND NVL(tk.so_luong_ton, 0) >= NVL(tk.muc_ton_toi_thieu, 0))
                   )
-                ORDER BY stock_status, cn.ten_chi_nhanh, sp.ten_san_pham
+                ORDER BY stock_status, sp.ten_san_pham
                 """;
+
         List<InventoryItem> rows = new ArrayList<>();
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -66,6 +67,7 @@ public class InventoryReportDAO {
             stmt.setString(12, status);
             stmt.setString(13, status);
             stmt.setString(14, status);
+
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     String branchName = ReportLookupDAO.normalizeBranchName(rs.getString("ten_chi_nhanh"));

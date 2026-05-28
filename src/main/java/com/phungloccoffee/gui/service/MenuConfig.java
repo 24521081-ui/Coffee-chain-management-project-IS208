@@ -17,7 +17,7 @@ public final class MenuConfig {
                     item("POS_PAYMENT", "Thanh toán", "$", "POS > Thanh toán", "Thanh toán", "/com/phungloccoffee/gui/view/PaymentScreen.fxml"),
                     item("POS_HISTORY", "Lịch sử giao dịch", "◷", "POS > Lịch sử giao dịch", "Lịch sử giao dịch", "/com/phungloccoffee/gui/view/PaymentHistory.fxml"),
                     item("CUSTOMER", "Khách hàng", "◎", "POS > Khách hàng", "Quản lý khách hàng", "/com/phungloccoffee/gui/view/customer/CustomerList.fxml"),
-                    item("OFFLINE_TRANSACTION", "Giao dịch offline", "⇅", "POS > Giao dịch offline", "Giao dịch offline", "/com/phungloccoffee/gui/view/pos/OfflineTransaction.fxml")
+                    item("OFFLINE_TRANSACTION", "Giao dịch offline", "⇄", "POS > Giao dịch offline", "Giao dịch offline", "/com/phungloccoffee/gui/view/pos/OfflineTransaction.fxml")
             );
             case NHAN_VIEN_KHO -> List.of(
                     item("INVENTORY_LIST", "Tồn kho", "▦", "Kho > Tồn kho", "Tra cứu tồn kho", "/com/phungloccoffee/gui/view/inventory/InventoryList.fxml"),

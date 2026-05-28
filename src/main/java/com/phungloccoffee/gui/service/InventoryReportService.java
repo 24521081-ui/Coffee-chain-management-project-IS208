@@ -20,6 +20,9 @@ import java.util.stream.Collectors;
 import static com.phungloccoffee.model.report.ReportModels.ALL_STATUS;
 
 public class InventoryReportService {
+    private static final String STATUS_LOW = "Tồn thấp";
+    private static final String STATUS_OUT = "Hết hàng";
+
     private final ReportLookupDAO lookupDAO = new ReportLookupDAO();
     private final InventoryReportDAO inventoryReportDAO = new InventoryReportDAO();
 
@@ -32,7 +35,7 @@ public class InventoryReportService {
     }
 
     public List<String> loadStatuses() {
-        return List.of(ALL_STATUS, "Ổn định", "Tồn thấp", "Hết hàng");
+        return List.of(ALL_STATUS, "Ổn định", STATUS_LOW, STATUS_OUT);
     }
 
     public InventoryReportData loadReport(LocalDate fromDate, LocalDate toDate, String branchId,
@@ -48,8 +51,8 @@ public class InventoryReportService {
 
     private InventorySummary summary(List<InventoryItem> items) {
         int tracked = items.size();
-        int lowStock = (int) items.stream().filter(item -> "Tồn thấp".equals(item.status())).count();
-        int outOfStock = (int) items.stream().filter(item -> "Hết hàng".equals(item.status())).count();
+        int lowStock = (int) items.stream().filter(item -> STATUS_LOW.equals(item.status())).count();
+        int outOfStock = (int) items.stream().filter(item -> STATUS_OUT.equals(item.status())).count();
         BigDecimal value = items.stream().map(InventoryItem::value).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new InventorySummary(tracked, lowStock, outOfStock, value);
     }
@@ -57,6 +60,7 @@ public class InventoryReportService {
     private List<InventoryBranch> branchSummary(List<InventoryItem> items) {
         Map<String, List<InventoryItem>> byBranch = items.stream()
                 .collect(Collectors.groupingBy(InventoryItem::branchId, LinkedHashMap::new, Collectors.toList()));
+
         return byBranch.entrySet().stream()
                 .map(entry -> {
                     List<InventoryItem> branchItems = entry.getValue();
@@ -67,8 +71,8 @@ public class InventoryReportService {
                             ReportLookupDAO.chartLabel(branchName),
                             branchName,
                             branchItems.size(),
-                            (int) branchItems.stream().filter(item -> "Tồn thấp".equals(item.status())).count(),
-                            (int) branchItems.stream().filter(item -> "Hết hàng".equals(item.status())).count(),
+                            (int) branchItems.stream().filter(item -> STATUS_LOW.equals(item.status())).count(),
+                            (int) branchItems.stream().filter(item -> STATUS_OUT.equals(item.status())).count(),
                             branchItems.stream().map(InventoryItem::value).reduce(BigDecimal.ZERO, BigDecimal::add)
                     );
                 })
@@ -78,8 +82,11 @@ public class InventoryReportService {
 
     private List<InventoryCategory> categorySummary(List<InventoryItem> items) {
         return items.stream()
-                .collect(Collectors.groupingBy(InventoryItem::categoryName, LinkedHashMap::new,
-                        Collectors.mapping(InventoryItem::value, Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))))
+                .collect(Collectors.groupingBy(
+                        InventoryItem::categoryName,
+                        LinkedHashMap::new,
+                        Collectors.mapping(InventoryItem::value, Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
+                ))
                 .entrySet()
                 .stream()
                 .map(entry -> new InventoryCategory(entry.getKey(), entry.getValue()))

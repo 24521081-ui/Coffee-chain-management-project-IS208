@@ -14,7 +14,7 @@
       fx:controller="com.phungloccoffee.gui.controller.inventory.SupplierListController"
       styleClass="page-root">
     <HBox styleClass="filter-card report-controls-row">
-        <TextField promptText="Tìm nhà cung cấp..." prefWidth="300" styleClass="page-input" />
+        <TextField fx:id="searchField" promptText="Tìm nhà cung cấp..." prefWidth="300" styleClass="page-input" />
         <ComboBox fx:id="categoryComboBox" promptText="Nhóm hàng" prefWidth="180" styleClass="page-combo" />
         <ComboBox fx:id="statusComboBox" promptText="Trạng thái" prefWidth="150" styleClass="page-combo" />
         <Region HBox.hgrow="ALWAYS" />
@@ -23,7 +23,7 @@
     <VBox styleClass="table-card" VBox.vgrow="ALWAYS">
         <VBox spacing="4">
             <Label text="Danh sách nhà cung cấp" styleClass="section-title" />
-            <Label text="Thông tin liên hệ và nhóm nguyên liệu cung ứng" styleClass="section-subtitle" />
+            <Label text="Hiển thị dữ liệu thật từ hệ thống nhà cung cấp và lịch sử nhập hàng" styleClass="section-subtitle" />
         </VBox>
         <TableView fx:id="supplierTable" prefHeight="540" VBox.vgrow="ALWAYS" styleClass="page-table">
             <columns>
@@ -33,7 +33,7 @@
                 <TableColumn fx:id="contactColumn" text="Liên hệ" prefWidth="180" />
                 <TableColumn fx:id="phoneColumn" text="Điện thoại" prefWidth="140" />
                 <TableColumn fx:id="statusColumn" text="Trạng thái" prefWidth="130" />
-                <TableColumn fx:id="actionColumn" text="Thao tác" prefWidth="140" />
+                <TableColumn fx:id="actionColumn" text="Thao tác" prefWidth="120" />
             </columns>
         </TableView>
     </VBox>

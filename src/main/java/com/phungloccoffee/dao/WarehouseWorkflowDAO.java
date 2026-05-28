@@ -187,6 +187,42 @@ public class WarehouseWorkflowDAO {
         }
     }
 
+    public List<WarehouseSlipLine> findStocktakeDetails(String slipId) throws DatabaseException {
+        String sql = """
+                SELECT ct.san_pham_id,
+                       sp.ten_san_pham,
+                       sp.don_vi_tinh,
+                       ct.so_luong_he_thong,
+                       ct.so_luong_thuc_te
+                FROM chi_tiet_kiem_ke_kho ct
+                JOIN san_pham sp ON sp.san_pham_id = ct.san_pham_id
+                WHERE ct.kiem_ke_id = ?
+                ORDER BY sp.ten_san_pham
+                """;
+        List<WarehouseSlipLine> lines = new ArrayList<>();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, slipId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    lines.add(new WarehouseSlipLine(
+                            rs.getString("san_pham_id"),
+                            rs.getString("ten_san_pham"),
+                            rs.getString("don_vi_tinh"),
+                            rs.getBigDecimal("so_luong_he_thong"),
+                            rs.getBigDecimal("so_luong_thuc_te"),
+                            null,
+                            null,
+                            null
+                    ));
+                }
+            }
+            return lines;
+        } catch (SQLException e) {
+            throw new DatabaseException("Không thể tải chi tiết phiếu kiểm kê.", e);
+        }
+    }
+
     private void insertImport(Connection conn, WarehouseSlip slip) throws SQLException {
         String sql = """
                 INSERT INTO phieu_nhap_kho (
