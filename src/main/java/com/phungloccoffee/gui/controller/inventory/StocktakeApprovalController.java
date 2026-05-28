@@ -288,7 +288,7 @@ public class StocktakeApprovalController {
 
             Row row = getTableRow().getItem();
             Button view = new Button("Xem chi tiết");
-            view.getStyleClass().add("btn-secondary");
+            view.getStyleClass().addAll("action-button", "action-btn-view");
             view.setOnAction(event -> showDetails(row));
 
             HBox box = new HBox(6);

@@ -92,6 +92,7 @@ public class InventoryAuditController {
         historyCodeColumn.setCellValueFactory(new PropertyValueFactory<>("code"));
         historyDateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
         historyStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        historyStatusColumn.setCellFactory(column -> new HistoryStatusCell());
         historyNoteColumn.setCellValueFactory(new PropertyValueFactory<>("note"));
 
         auditDetailTable.setEditable(true);
@@ -211,6 +212,31 @@ public class InventoryAuditController {
             Label badge = new Label(item);
             badge.getStyleClass().addAll("status-badge",
                     "Bắt buộc".equals(item) ? "status-warning" : "status-success");
+            HBox box = new HBox(badge);
+            box.setAlignment(Pos.CENTER_LEFT);
+            setGraphic(box);
+            setText(null);
+        }
+    }
+
+    private static class HistoryStatusCell extends TableCell<SlipHistoryRow, String> {
+        @Override
+        protected void updateItem(String status, boolean empty) {
+            super.updateItem(status, empty);
+            if (empty || status == null) {
+                setGraphic(null);
+                setText(null);
+                return;
+            }
+
+            Label badge = new Label(status);
+            String styleClass = switch (status) {
+                case "ÄÃ£ duyá»‡t" -> "status-success";
+                case "Tá»« chá»‘i" -> "status-danger";
+                default -> "status-warning";
+            };
+            badge.getStyleClass().addAll("status-badge", styleClass);
+
             HBox box = new HBox(badge);
             box.setAlignment(Pos.CENTER_LEFT);
             setGraphic(box);

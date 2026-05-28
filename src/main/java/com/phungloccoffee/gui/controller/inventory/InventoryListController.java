@@ -3,6 +3,10 @@ package com.phungloccoffee.gui.controller.inventory;
 import com.phungloccoffee.bus.InventoryBUS;
 import com.phungloccoffee.exception.DatabaseException;
 import com.phungloccoffee.exception.PermissionException;
+import com.phungloccoffee.gui.controller.layout.MainController;
+import com.phungloccoffee.gui.model.MenuItemModel;
+import com.phungloccoffee.gui.service.MenuConfig;
+import com.phungloccoffee.gui.service.SessionManager;
 import com.phungloccoffee.model.InventoryItem;
 import com.phungloccoffee.util.AlertUtils;
 import javafx.beans.property.SimpleStringProperty;
@@ -138,12 +142,30 @@ public class InventoryListController {
 
         ActionCell() {
             button.getStyleClass().addAll("action-button", "action-edit-button");
+            button.setOnAction(event -> navigateToInventoryAudit());
         }
 
         @Override
         protected void updateItem(Void item, boolean empty) {
             super.updateItem(item, empty);
             setGraphic(empty ? null : button);
+        }
+
+        private void navigateToInventoryAudit() {
+            MainController mainController = MainController.from(button);
+            if (mainController == null || SessionManager.getCurrentUser() == null) {
+                AlertUtils.showWarning("KhÃ´ng thá»ƒ má»Ÿ mÃ n hÃ¬nh kiá»ƒm kÃª kho lÃºc nÃ y.");
+                return;
+            }
+
+            MenuItemModel menuItem = MenuConfig.findMenuItem(SessionManager.getCurrentUser().getRole(), "INVENTORY_AUDIT")
+                    .orElse(null);
+            if (menuItem == null) {
+                AlertUtils.showWarning("TÃ i khoáº£n hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n truy cáº­p mÃ n hÃ¬nh kiá»ƒm kÃª kho.");
+                return;
+            }
+
+            mainController.navigateTo(menuItem);
         }
     }
 

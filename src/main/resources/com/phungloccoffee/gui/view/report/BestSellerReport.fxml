@@ -17,12 +17,12 @@
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.phungloccoffee.gui.controller.report.BestSellerReportController"
       styleClass="page-root">
-    <HBox styleClass="filter-card report-controls-row revenue-filter-row">
-        <DatePicker fx:id="fromDatePicker" prefWidth="170" promptText="Từ ngày" styleClass="page-date revenue-filter-date" />
-        <DatePicker fx:id="toDatePicker" prefWidth="170" promptText="Đến ngày" styleClass="page-date revenue-filter-date" />
-        <ComboBox fx:id="branchComboBox" promptText="Chi nhánh" prefWidth="220" styleClass="page-combo revenue-filter-combo" />
-        <ComboBox fx:id="categoryComboBox" promptText="Nhóm sản phẩm" prefWidth="200" styleClass="page-combo revenue-filter-combo" />
-        <Button text="Xem báo cáo" onAction="#loadReport" styleClass="primary-button revenue-report-button" />
+    <HBox styleClass="filter-card report-controls-row report-filter-surface">
+        <DatePicker fx:id="fromDatePicker" prefWidth="170" promptText="Từ ngày" styleClass="filter-date report-filter-control" />
+        <DatePicker fx:id="toDatePicker" prefWidth="170" promptText="Đến ngày" styleClass="filter-date report-filter-control" />
+        <ComboBox fx:id="branchComboBox" promptText="Chi nhánh" prefWidth="220" styleClass="filter-combo report-filter-control" />
+        <ComboBox fx:id="categoryComboBox" promptText="Nhóm sản phẩm" prefWidth="200" styleClass="filter-combo report-filter-control" />
+        <Button text="Xem báo cáo" onAction="#loadReport" styleClass="filter-apply-button report-filter-apply" />
         <Region HBox.hgrow="ALWAYS" />
     </HBox>
 
