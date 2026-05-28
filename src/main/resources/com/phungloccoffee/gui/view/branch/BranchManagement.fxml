@@ -31,15 +31,15 @@
     <HBox styleClass="stats-row">
         <VBox styleClass="metric-card" HBox.hgrow="ALWAYS">
             <Label styleClass="metric-label" text="Tổng chi nhánh" />
-            <Label fx:id="totalBranchLabel" styleClass="metric-value" text="8" />
+            <Label fx:id="totalBranchLabel" styleClass="metric-value" text="0" />
         </VBox>
         <VBox styleClass="metric-card" HBox.hgrow="ALWAYS">
             <Label styleClass="metric-label" text="Đang hoạt động" />
-            <Label fx:id="activeBranchLabel" styleClass="metric-value" text="7" />
+            <Label fx:id="activeBranchLabel" styleClass="metric-value" text="0" />
         </VBox>
         <VBox styleClass="metric-card" HBox.hgrow="ALWAYS">
             <Label styleClass="metric-label" text="Tạm dừng" />
-            <Label fx:id="pausedBranchLabel" styleClass="metric-value" text="1" />
+            <Label fx:id="pausedBranchLabel" styleClass="metric-value" text="0" />
         </VBox>
     </HBox>
 

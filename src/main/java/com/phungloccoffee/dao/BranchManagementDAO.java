@@ -94,11 +94,12 @@ public class BranchManagementDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     String fullName = rs.getString("ten_chi_nhanh");
+                    String address = rs.getString("dia_chi");
                     rows.add(new BranchData(
                             rs.getString("chi_nhanh_id"),
                             fullName,
-                            ReportLookupDAO.normalizeBranchName(fullName),
-                            rs.getString("dia_chi"),
+                            deriveAreaFromAddress(address),
+                            address,
                             rs.getString("phone"),
                             rs.getString("manager_name"),
                             rs.getString("manager_phone"),
@@ -123,6 +124,20 @@ public class BranchManagementDAO {
 
     private BigDecimal nullToZero(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private String deriveAreaFromAddress(String address) {
+        if (address == null || address.trim().isEmpty()) {
+            return "Chưa xác định";
+        }
+        String[] parts = address.split(",");
+        for (int i = parts.length - 1; i >= 0; i--) {
+            String part = parts[i].trim();
+            if (!part.isEmpty()) {
+                return part;
+            }
+        }
+        return address.trim();
     }
 
     private LocalDate toLocalDate(Timestamp timestamp) {

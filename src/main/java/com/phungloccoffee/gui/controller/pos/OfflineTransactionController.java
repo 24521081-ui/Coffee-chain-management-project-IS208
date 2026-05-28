@@ -45,8 +45,8 @@ public class OfflineTransactionController {
 
     @FXML
     private void initialize() {
-        syncStatusComboBox.getItems().setAll("Tat ca trang thai", OfflineOrder.SYNC_PENDING, OfflineOrder.SYNC_SYNCED, OfflineOrder.SYNC_FAILED);
-        deviceComboBox.getItems().setAll("Tat ca chi nhanh");
+        syncStatusComboBox.getItems().setAll("Tất cả trạng thái", OfflineOrder.SYNC_PENDING, OfflineOrder.SYNC_SYNCED, OfflineOrder.SYNC_FAILED);
+        deviceComboBox.getItems().setAll("Tất cả chi nhánh");
         syncStatusComboBox.getSelectionModel().selectFirst();
         deviceComboBox.getSelectionModel().selectFirst();
 
@@ -68,7 +68,7 @@ public class OfflineTransactionController {
     private void syncSelected() {
         try {
             int synced = syncService.syncPending(SessionManager.getCurrentBranchId());
-            AlertUtils.showInfo("Da dong bo " + synced + " giao dich offline.");
+            AlertUtils.showInfo("Đã đồng bộ " + synced + " giao dịch offline.");
             loadOfflineOrders();
         } catch (Exception e) {
             AlertUtils.showError(e.getMessage());
@@ -83,7 +83,7 @@ public class OfflineTransactionController {
             String selectedStatus = syncStatusComboBox.getValue();
             List<OfflineRow> rows = orders.stream()
                     .filter(order -> selectedStatus == null
-                            || selectedStatus.startsWith("Tat ca")
+                            || selectedStatus.startsWith("Tất cả")
                             || selectedStatus.equals(order.getSyncStatus()))
                     .map(this::toRow)
                     .toList();
@@ -138,7 +138,7 @@ public class OfflineTransactionController {
 
     private class ActionCell extends TableCell<OfflineRow, Void> {
         private final HBox box = new HBox(8);
-        private final Button syncButton = new Button("Dong bo");
+        private final Button syncButton = new Button("Đồng bộ");
 
         ActionCell() {
             syncButton.getStyleClass().addAll("action-button", "action-approve-button");
