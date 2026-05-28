@@ -17,6 +17,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -26,6 +27,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -42,9 +44,12 @@ public class ImportApprovalController {
     @FXML private TableColumn<Row, Void> actionColumn;
     @FXML private StackPane importTabIconContainer;
     @FXML private StackPane detailTabIconContainer;
+    @FXML private DatePicker fromDatePicker;
+    @FXML private DatePicker toDatePicker;
 
     private final WarehouseWorkflowBUS workflowBUS = new WarehouseWorkflowBUS();
     private final ObservableList<Row> rows = FXCollections.observableArrayList();
+    private final ObservableList<Row> allRows = FXCollections.observableArrayList();
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @FXML
@@ -75,19 +80,47 @@ public class ImportApprovalController {
 
     private void loadRows() {
         try {
-            List<WarehouseApprovalItem> items = workflowBUS.loadApprovalItems(WarehouseSlipType.IMPORT, null);
-            rows.setAll(items.stream().map(item -> new Row(
+            List<WarehouseApprovalItem> items = workflowBUS.loadApprovalHistory(WarehouseSlipType.IMPORT);
+            allRows.setAll(items.stream().map(item -> new Row(
                     item.getSlipId(),
                     item.getCreatedBy(),
+                    item.getCreatedAt().toLocalDate(),
                     item.getCreatedAt().format(formatter),
                     item.getRelatedParty(),
                     item.getItemCount(),
                     "-",
                     WarehouseSlipStatus.toDisplay(item.getStatus())
             )).toList());
+            applyDateFilter();
         } catch (Exception e) {
+            allRows.clear();
             rows.clear();
         }
+    }
+
+    @FXML
+    private void filterByDate() {
+        applyDateFilter();
+    }
+
+    @FXML
+    private void resetDateFilter() {
+        if (fromDatePicker != null) {
+            fromDatePicker.setValue(null);
+        }
+        if (toDatePicker != null) {
+            toDatePicker.setValue(null);
+        }
+        applyDateFilter();
+    }
+
+    private void applyDateFilter() {
+        LocalDate from = fromDatePicker == null ? null : fromDatePicker.getValue();
+        LocalDate to = toDatePicker == null ? null : toDatePicker.getValue();
+        rows.setAll(allRows.stream()
+                .filter(row -> (from == null || !row.getCreatedDate().isBefore(from))
+                        && (to == null || !row.getCreatedDate().isAfter(to)))
+                .toList());
     }
 
     private void approve(Row row) {
@@ -252,15 +285,17 @@ public class ImportApprovalController {
     public static class Row {
         private final SimpleStringProperty code;
         private final SimpleStringProperty creator;
+        private final LocalDate createdDate;
         private final SimpleStringProperty date;
         private final SimpleStringProperty supplier;
         private final SimpleIntegerProperty itemCount;
         private final SimpleStringProperty total;
         private final SimpleStringProperty status;
 
-        public Row(String code, String creator, String date, String supplier, int itemCount, String total, String status) {
+        public Row(String code, String creator, LocalDate createdDate, String date, String supplier, int itemCount, String total, String status) {
             this.code = new SimpleStringProperty(code);
             this.creator = new SimpleStringProperty(creator);
+            this.createdDate = createdDate;
             this.date = new SimpleStringProperty(date);
             this.supplier = new SimpleStringProperty(supplier);
             this.itemCount = new SimpleIntegerProperty(itemCount);
@@ -277,6 +312,7 @@ public class ImportApprovalController {
         public SimpleStringProperty statusProperty() { return status; }
         public String getCode() { return code.get(); }
         public String getCreator() { return creator.get(); }
+        public LocalDate getCreatedDate() { return createdDate; }
         public String getDate() { return date.get(); }
         public String getSupplier() { return supplier.get(); }
         public int getItemCount() { return itemCount.get(); }

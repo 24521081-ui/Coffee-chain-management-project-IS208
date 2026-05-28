@@ -18,6 +18,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
@@ -31,6 +32,7 @@ import javafx.scene.layout.VBox;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -44,9 +46,12 @@ public class StocktakeApprovalController {
     @FXML private TableColumn<Row, Number> itemCountColumn;
     @FXML private TableColumn<Row, String> statusColumn;
     @FXML private TableColumn<Row, Void> actionColumn;
+    @FXML private DatePicker fromDatePicker;
+    @FXML private DatePicker toDatePicker;
 
     private final WarehouseWorkflowBUS workflowBUS = new WarehouseWorkflowBUS();
     private final ObservableList<Row> rows = FXCollections.observableArrayList();
+    private final ObservableList<Row> allRows = FXCollections.observableArrayList();
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private final DecimalFormat quantityFormat = new DecimalFormat("#,##0.##");
 
@@ -67,19 +72,47 @@ public class StocktakeApprovalController {
 
     private void loadRows() {
         try {
-            List<WarehouseApprovalItem> items = workflowBUS.loadApprovalItems(WarehouseSlipType.STOCKTAKE, null);
-            rows.setAll(items.stream().map(item -> new Row(
+            List<WarehouseApprovalItem> items = workflowBUS.loadApprovalHistory(WarehouseSlipType.STOCKTAKE);
+            allRows.setAll(items.stream().map(item -> new Row(
                     item.getSlipId(),
                     item.getCreatedBy(),
+                    item.getCreatedAt().toLocalDate(),
                     item.getCreatedAt().format(formatter),
                     safeText(item.getRelatedParty()),
                     item.getItemCount(),
                     WarehouseSlipStatus.toDisplay(item.getStatus())
             )).toList());
+            applyDateFilter();
         } catch (Exception e) {
+            allRows.clear();
             rows.clear();
             AlertUtils.showError("Không thể tải danh sách phiếu kiểm kê chờ duyệt.");
         }
+    }
+
+    @FXML
+    private void filterByDate() {
+        applyDateFilter();
+    }
+
+    @FXML
+    private void resetDateFilter() {
+        if (fromDatePicker != null) {
+            fromDatePicker.setValue(null);
+        }
+        if (toDatePicker != null) {
+            toDatePicker.setValue(null);
+        }
+        applyDateFilter();
+    }
+
+    private void applyDateFilter() {
+        LocalDate from = fromDatePicker == null ? null : fromDatePicker.getValue();
+        LocalDate to = toDatePicker == null ? null : toDatePicker.getValue();
+        rows.setAll(allRows.stream()
+                .filter(row -> (from == null || !row.getCreatedDate().isBefore(from))
+                        && (to == null || !row.getCreatedDate().isAfter(to)))
+                .toList());
     }
 
     private void showDetails(Row row) {
@@ -281,14 +314,16 @@ public class StocktakeApprovalController {
     public static class Row {
         private final SimpleStringProperty code;
         private final SimpleStringProperty creator;
+        private final LocalDate createdDate;
         private final SimpleStringProperty date;
         private final SimpleStringProperty note;
         private final SimpleIntegerProperty itemCount;
         private final SimpleStringProperty status;
 
-        public Row(String code, String creator, String date, String note, int itemCount, String status) {
+        public Row(String code, String creator, LocalDate createdDate, String date, String note, int itemCount, String status) {
             this.code = new SimpleStringProperty(code);
             this.creator = new SimpleStringProperty(creator);
+            this.createdDate = createdDate;
             this.date = new SimpleStringProperty(date);
             this.note = new SimpleStringProperty(note);
             this.itemCount = new SimpleIntegerProperty(itemCount);
@@ -303,6 +338,7 @@ public class StocktakeApprovalController {
         public SimpleStringProperty statusProperty() { return status; }
         public String getCode() { return code.get(); }
         public String getCreator() { return creator.get(); }
+        public LocalDate getCreatedDate() { return createdDate; }
         public String getDate() { return date.get(); }
         public String getNote() { return note.get(); }
         public int getItemCount() { return itemCount.get(); }

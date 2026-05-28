@@ -6,8 +6,11 @@ import com.phungloccoffee.exception.PermissionException;
 import com.phungloccoffee.exception.ValidationException;
 import com.phungloccoffee.gui.service.SessionManager;
 import com.phungloccoffee.model.InventoryItem;
+import com.phungloccoffee.model.WarehouseApprovalItem;
 import com.phungloccoffee.model.WarehouseSlip;
 import com.phungloccoffee.model.WarehouseSlipLine;
+import com.phungloccoffee.model.WarehouseSlipStatus;
+import com.phungloccoffee.model.WarehouseSlipType;
 import com.phungloccoffee.util.AlertUtils;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -29,6 +32,7 @@ import javafx.util.converter.DoubleStringConverter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class InventoryAuditController {
@@ -47,9 +51,19 @@ public class InventoryAuditController {
     @FXML private TableColumn<AuditRow, String> diffColumn;
     @FXML private TableColumn<AuditRow, String> noteColumn;
     @FXML private TableColumn<AuditRow, String> actionColumn;
+    @FXML private TableView<SlipHistoryRow> historyTable;
+    @FXML private TableColumn<SlipHistoryRow, String> historyCodeColumn;
+    @FXML private TableColumn<SlipHistoryRow, String> historyDateColumn;
+    @FXML private TableColumn<SlipHistoryRow, String> historyStatusColumn;
+    @FXML private TableColumn<SlipHistoryRow, String> historyNoteColumn;
+    @FXML private DatePicker historyFromDatePicker;
+    @FXML private DatePicker historyToDatePicker;
 
     private final WarehouseWorkflowBUS workflowBUS = new WarehouseWorkflowBUS();
     private final ObservableList<AuditRow> auditRows = FXCollections.observableArrayList();
+    private final ObservableList<SlipHistoryRow> historyRows = FXCollections.observableArrayList();
+    private final ObservableList<SlipHistoryRow> allHistoryRows = FXCollections.observableArrayList();
+    private final DateTimeFormatter historyFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @FXML
     private void initialize() {
@@ -75,11 +89,19 @@ public class InventoryAuditController {
         actionColumn.setCellValueFactory(new PropertyValueFactory<>("explanationRequirement"));
         actionColumn.setCellFactory(column -> new ExplanationRequirementCell());
 
+        historyCodeColumn.setCellValueFactory(new PropertyValueFactory<>("code"));
+        historyDateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
+        historyStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        historyNoteColumn.setCellValueFactory(new PropertyValueFactory<>("note"));
+
         auditDetailTable.setEditable(true);
         auditDetailTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         auditDetailTable.setItems(auditRows);
+        historyTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        historyTable.setItems(historyRows);
 
         loadAuditRows();
+        loadHistory();
     }
 
     private void loadAuditRows() {
@@ -125,9 +147,56 @@ public class InventoryAuditController {
             auditCodeField.clear();
             noteArea.clear();
             loadAuditRows();
+            loadHistory();
         } catch (ValidationException | PermissionException | DatabaseException e) {
             AlertUtils.showError(e.getMessage());
         }
+    }
+
+    private void loadHistory() {
+        try {
+            allHistoryRows.setAll(workflowBUS.loadMySlipHistory(WarehouseSlipType.STOCKTAKE).stream()
+                    .map(this::toHistoryRow)
+                    .toList());
+            applyHistoryDateFilter();
+        } catch (DatabaseException | PermissionException e) {
+            allHistoryRows.clear();
+            historyRows.clear();
+        }
+    }
+
+    @FXML
+    private void filterHistoryByDate() {
+        applyHistoryDateFilter();
+    }
+
+    @FXML
+    private void resetHistoryDateFilter() {
+        historyFromDatePicker.setValue(null);
+        historyToDatePicker.setValue(null);
+        applyHistoryDateFilter();
+    }
+
+    private void applyHistoryDateFilter() {
+        LocalDate from = historyFromDatePicker == null ? null : historyFromDatePicker.getValue();
+        LocalDate to = historyToDatePicker == null ? null : historyToDatePicker.getValue();
+        historyRows.setAll(allHistoryRows.stream()
+                .filter(row -> (from == null || !row.getCreatedDate().isBefore(from))
+                        && (to == null || !row.getCreatedDate().isAfter(to)))
+                .toList());
+    }
+
+    private SlipHistoryRow toHistoryRow(WarehouseApprovalItem item) {
+        String note = item.getRejectedReason() != null && !item.getRejectedReason().isBlank()
+                ? item.getRejectedReason()
+                : (item.getRelatedParty() == null ? "" : item.getRelatedParty());
+        return new SlipHistoryRow(
+                item.getSlipId(),
+                item.getCreatedAt().toLocalDate(),
+                item.getCreatedAt().format(historyFormatter),
+                WarehouseSlipStatus.toDisplay(item.getStatus()),
+                note
+        );
     }
 
     private static class ExplanationRequirementCell extends TableCell<AuditRow, String> {
@@ -204,5 +273,27 @@ public class InventoryAuditController {
         private static String trim(double value) {
             return value == Math.rint(value) ? String.valueOf((int) value) : String.valueOf(value);
         }
+    }
+
+    public static class SlipHistoryRow {
+        private final SimpleStringProperty code;
+        private final LocalDate createdDate;
+        private final SimpleStringProperty date;
+        private final SimpleStringProperty status;
+        private final SimpleStringProperty note;
+
+        public SlipHistoryRow(String code, LocalDate createdDate, String date, String status, String note) {
+            this.code = new SimpleStringProperty(code);
+            this.createdDate = createdDate;
+            this.date = new SimpleStringProperty(date);
+            this.status = new SimpleStringProperty(status);
+            this.note = new SimpleStringProperty(note);
+        }
+
+        public String getCode() { return code.get(); }
+        public LocalDate getCreatedDate() { return createdDate; }
+        public String getDate() { return date.get(); }
+        public String getStatus() { return status.get(); }
+        public String getNote() { return note.get(); }
     }
 }

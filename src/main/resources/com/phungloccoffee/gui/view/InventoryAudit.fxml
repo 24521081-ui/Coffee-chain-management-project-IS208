@@ -61,6 +61,27 @@
             </TableView>
         </VBox>
 
+        <VBox styleClass="table-card" VBox.vgrow="ALWAYS">
+            <VBox spacing="4">
+                <Label text="Lịch sử phiếu kiểm kê đã lập" styleClass="section-title" />
+                <Label text="Hiển thị các phiếu nháp, chờ duyệt, đã duyệt và từ chối của nhân viên kho." styleClass="section-subtitle" />
+            </VBox>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <DatePicker fx:id="historyFromDatePicker" promptText="Từ ngày" />
+                <DatePicker fx:id="historyToDatePicker" promptText="Đến ngày" />
+                <Button text="Lọc ngày" onAction="#filterHistoryByDate" styleClass="secondary-button" />
+                <Button text="Xóa lọc" onAction="#resetHistoryDateFilter" styleClass="secondary-button" />
+            </HBox>
+            <TableView fx:id="historyTable" prefHeight="220" VBox.vgrow="ALWAYS" styleClass="page-table">
+                <columns>
+                    <TableColumn fx:id="historyCodeColumn" text="Mã phiếu" prefWidth="150" />
+                    <TableColumn fx:id="historyDateColumn" text="Ngày lập" prefWidth="180" />
+                    <TableColumn fx:id="historyStatusColumn" text="Trạng thái" prefWidth="140" />
+                    <TableColumn fx:id="historyNoteColumn" text="Ghi chú / kết quả" prefWidth="340" />
+                </columns>
+            </TableView>
+        </VBox>
+
         <HBox styleClass="action-footer">
             <Region HBox.hgrow="ALWAYS" />
             <Button text="Lưu nháp" onAction="#saveDraft" styleClass="secondary-button" />

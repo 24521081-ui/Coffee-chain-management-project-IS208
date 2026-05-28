@@ -75,10 +75,26 @@ public class WarehouseWorkflowBUS extends PermissionBUS {
         workflowDAO.createSlip(slip);
     }
 
-    public List<WarehouseApprovalItem> loadApprovalItems(String type, String status)
+    public List<WarehouseApprovalItem> loadPendingApprovalItems(String type)
             throws DatabaseException, PermissionException {
         requireRole("QUAN_LY_CHI_NHANH", "IT_ADMIN");
-        return workflowDAO.findApprovalItems(SessionManager.getCurrentBranchId(), type, status);
+        return workflowDAO.findPendingApprovalItems(SessionManager.getCurrentBranchId(), type);
+    }
+
+    public List<WarehouseApprovalItem> loadApprovalHistory(String type)
+            throws DatabaseException, PermissionException {
+        requireRole("QUAN_LY_CHI_NHANH", "IT_ADMIN");
+        return workflowDAO.findApprovalHistory(SessionManager.getCurrentBranchId(), type);
+    }
+
+    public List<WarehouseApprovalItem> loadMySlipHistory(String type)
+            throws DatabaseException, PermissionException {
+        requireRole("NHAN_VIEN_KHO", "IT_ADMIN");
+        return workflowDAO.findEmployeeSlipHistory(
+                SessionManager.getCurrentEmployeeId(),
+                SessionManager.getCurrentBranchId(),
+                type
+        );
     }
 
     public List<WarehouseSlipLine> loadStocktakeDetails(String slipId)
