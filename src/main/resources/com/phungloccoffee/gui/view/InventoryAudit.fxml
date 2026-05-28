@@ -42,7 +42,7 @@
             <HBox alignment="CENTER_LEFT" spacing="12">
                 <VBox spacing="4">
                     <Label text="Chi tiết kiểm kê" styleClass="section-title" />
-                    <Label text="Nhập số lượng thực tế. Nếu chênh lệch vượt ngưỡng, bắt buộc phải có giải trình." styleClass="section-subtitle" />
+                    <Label text="Nhập số lượng thực tế. Nếu chênh lệch vượt 2% so với tồn hệ thống, bắt buộc phải có giải trình." styleClass="section-subtitle" />
                 </VBox>
                 <Region HBox.hgrow="ALWAYS" />
                 <Button text="Tải lại tồn hệ thống" onAction="#reloadSystemQuantity" styleClass="secondary-button" />
@@ -56,7 +56,7 @@
                     <TableColumn fx:id="actualColumn" text="Số lượng thực tế" prefWidth="140" />
                     <TableColumn fx:id="diffColumn" text="Chênh lệch" prefWidth="120" />
                     <TableColumn fx:id="noteColumn" text="Giải trình" prefWidth="180" />
-                    <TableColumn fx:id="actionColumn" text="Thao tac" prefWidth="140" />
+                    <TableColumn fx:id="actionColumn" text="Yêu cầu giải trình" prefWidth="160" />
                 </columns>
             </TableView>
         </VBox>

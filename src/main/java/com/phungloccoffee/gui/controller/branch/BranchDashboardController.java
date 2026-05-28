@@ -1,6 +1,15 @@
 package com.phungloccoffee.gui.controller.branch;
 
+import com.phungloccoffee.exception.DatabaseException;
+import com.phungloccoffee.exception.PermissionException;
+import com.phungloccoffee.gui.service.InventoryReportService;
+import com.phungloccoffee.gui.service.RevenueReportService;
 import com.phungloccoffee.gui.util.IconFactory;
+import com.phungloccoffee.model.WarehouseApprovalItem;
+import com.phungloccoffee.model.WarehouseSlipType;
+import com.phungloccoffee.util.AlertUtils;
+import com.phungloccoffee.util.SessionManager;
+import com.phungloccoffee.bus.WarehouseWorkflowBUS;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -13,7 +22,28 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.StackPane;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 public class BranchDashboardController {
+    private static final DateTimeFormatter DAY_FORMATTER = DateTimeFormatter.ofPattern("dd/MM");
+
+    @FXML private Label revenueValueLabel;
+    @FXML private Label revenueGrowthLabel;
+    @FXML private Label ordersValueLabel;
+    @FXML private Label ordersHintLabel;
+    @FXML private Label approvalValueLabel;
+    @FXML private Label approvalHintLabel;
+    @FXML private Label stockWarningValueLabel;
+    @FXML private Label stockWarningHintLabel;
+    @FXML private Label chartTitleLabel;
+    @FXML private Label chartSubtitleLabel;
+    @FXML private Label pendingCountLabel;
+    @FXML private Label approvedCountLabel;
+    @FXML private Label rejectedCountLabel;
     @FXML private StackPane revenueIcon;
     @FXML private StackPane ordersIcon;
     @FXML private StackPane approvalIcon;
@@ -25,6 +55,10 @@ public class BranchDashboardController {
     @FXML private TableColumn<ActivityRow, String> timeColumn;
     @FXML private TableColumn<ActivityRow, String> statusColumn;
 
+    private final RevenueReportService revenueReportService = new RevenueReportService();
+    private final InventoryReportService inventoryReportService = new InventoryReportService();
+    private final WarehouseWorkflowBUS workflowBUS = new WarehouseWorkflowBUS();
+
     @FXML
     private void initialize() {
         revenueIcon.getChildren().setAll(IconFactory.createReportIcon("money"));
@@ -32,45 +66,91 @@ public class BranchDashboardController {
         approvalIcon.getChildren().setAll(IconFactory.createReportIcon("clipboard"));
         stockIcon.getChildren().setAll(IconFactory.createReportIcon("alert"));
 
-        seedChart();
-        seedActivityTable();
-    }
-
-    private void seedChart() {
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.getData().add(new XYChart.Data<>("T2", 12.8));
-        series.getData().add(new XYChart.Data<>("T3", 14.1));
-        series.getData().add(new XYChart.Data<>("T4", 13.6));
-        series.getData().add(new XYChart.Data<>("T5", 16.4));
-        series.getData().add(new XYChart.Data<>("T6", 18.5));
-        series.getData().add(new XYChart.Data<>("T7", 20.2));
-        series.getData().add(new XYChart.Data<>("CN", 17.9));
-        revenueChart.getData().setAll(series);
-    }
-
-    private void seedActivityTable() {
         activityColumn.setCellValueFactory(data -> data.getValue().activityProperty());
         ownerColumn.setCellValueFactory(data -> data.getValue().ownerProperty());
         timeColumn.setCellValueFactory(data -> data.getValue().timeProperty());
         statusColumn.setCellValueFactory(data -> data.getValue().statusProperty());
         statusColumn.setCellFactory(column -> new StatusCell());
         activityTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        activityTable.setItems(FXCollections.observableArrayList(
-                row("Duy\u1ec7t phi\u1ebfu xu\u1ea5t PXK-0012", "Qu\u1ea3n l\u00fd chi nh\u00e1nh", "09:15", "Ch\u1edd duy\u1ec7t"),
-                row("C\u1eadp nh\u1eadt t\u1ed3n kho c\u1ea3nh b\u00e1o", "Nh\u00e2n vi\u00ean kho", "10:30", "\u0110ang x\u1eed l\u00fd"),
-                row("T\u1ed5ng h\u1ee3p doanh thu ca s\u00e1ng", "Thu ng\u00e2n", "11:45", "Ho\u00e0n t\u1ea5t"),
-                row("Ki\u1ec3m tra hao h\u1ee5t nguy\u00ean li\u1ec7u", "Nh\u00e2n vi\u00ean kho", "13:20", "Ch\u1edd duy\u1ec7t")
-        ));
+
+        loadDashboard();
     }
 
-    private ActivityRow row(String activity, String owner, String time, String status) {
-        return new ActivityRow(activity, owner, time, status);
+    private void loadDashboard() {
+        try {
+            String branchId = SessionManager.getCurrentBranchId();
+            LocalDate today = LocalDate.now();
+            var revenue = revenueReportService.loadReport(today.minusDays(6), today, branchId);
+            var inventory = inventoryReportService.loadReport(today.minusDays(30), today, branchId, "Tất cả nhóm", "Tất cả trạng thái");
+            List<WarehouseApprovalItem> approvals = new ArrayList<>();
+            approvals.addAll(workflowBUS.loadApprovalItems(WarehouseSlipType.IMPORT, null));
+            approvals.addAll(workflowBUS.loadApprovalItems(WarehouseSlipType.EXPORT, null));
+            approvals.addAll(workflowBUS.loadApprovalItems(WarehouseSlipType.STOCKTAKE, null));
+
+            revenueValueLabel.setText(formatMoneyCompact(revenue.summary().revenue()));
+            revenueGrowthLabel.setText(formatGrowth(revenue.summary().growthPercent()));
+            ordersValueLabel.setText(String.valueOf(revenue.summary().orders()));
+            ordersHintLabel.setText("7 ngày gần nhất");
+            approvalValueLabel.setText(String.valueOf(approvals.size()));
+            approvalHintLabel.setText("Cần xử lý");
+            stockWarningValueLabel.setText(String.valueOf(inventory.summary().lowStock() + inventory.summary().outOfStock()));
+            stockWarningHintLabel.setText("Kiểm tra ngay");
+
+            chartTitleLabel.setText("Doanh thu theo ngày");
+            chartSubtitleLabel.setText("7 ngày gần nhất");
+            bindChart(revenue.dailyRevenue());
+
+            pendingCountLabel.setText(String.valueOf(approvals.size()));
+            approvedCountLabel.setText("0");
+            rejectedCountLabel.setText("0");
+
+            activityTable.setItems(FXCollections.observableArrayList(
+                    approvals.stream()
+                            .sorted(Comparator.comparing(WarehouseApprovalItem::getCreatedAt).reversed())
+                            .limit(8)
+                            .map(item -> new ActivityRow(
+                                    describeApproval(item),
+                                    item.getCreatedBy(),
+                                    item.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM HH:mm")),
+                                    "Chờ duyệt"
+                            ))
+                            .toList()
+            ));
+        } catch (DatabaseException | PermissionException e) {
+            AlertUtils.showError(e.getMessage());
+            revenueChart.getData().clear();
+            activityTable.setItems(FXCollections.observableArrayList());
+        }
+    }
+
+    private void bindChart(List<com.phungloccoffee.model.report.ReportModels.DailyRevenue> rows) {
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        rows.forEach(row -> series.getData().add(new XYChart.Data<>(DAY_FORMATTER.format(row.date()), row.revenue())));
+        revenueChart.getData().setAll(series);
+    }
+
+    private String describeApproval(WarehouseApprovalItem item) {
+        return switch (item.getSlipType()) {
+            case WarehouseSlipType.IMPORT -> "Duyệt phiếu nhập " + item.getSlipId();
+            case WarehouseSlipType.EXPORT -> "Duyệt phiếu xuất " + item.getSlipId();
+            case WarehouseSlipType.STOCKTAKE -> "Duyệt phiếu kiểm kê " + item.getSlipId();
+            default -> "Phiếu kho " + item.getSlipId();
+        };
+    }
+
+    private String formatMoneyCompact(java.math.BigDecimal value) {
+        java.math.BigDecimal million = value.divide(java.math.BigDecimal.valueOf(1_000_000), 1, java.math.RoundingMode.HALF_UP);
+        return million.stripTrailingZeros().toPlainString() + "M";
+    }
+
+    private String formatGrowth(int growth) {
+        return (growth > 0 ? "+" : "") + growth + "%";
     }
 
     private static String statusStyle(String status) {
         return switch (status) {
-            case "\u0110ang x\u1eed l\u00fd" -> "status-info";
-            case "Ho\u00e0n t\u1ea5t" -> "status-success";
+            case "Đang xử lý" -> "status-info";
+            case "Hoàn tất" -> "status-success";
             default -> "status-warning";
         };
     }

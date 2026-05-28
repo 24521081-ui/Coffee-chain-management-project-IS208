@@ -15,10 +15,11 @@ import com.phungloccoffee.util.SessionManager;
 import com.phungloccoffee.util.ValidationUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 public class WarehouseWorkflowBUS extends PermissionBUS {
-    private static final BigDecimal STOCKTAKE_EXPLANATION_THRESHOLD = new BigDecimal("10");
+    private static final BigDecimal STOCKTAKE_EXPLANATION_THRESHOLD_PERCENT = new BigDecimal("2");
 
     private final WarehouseWorkflowDAO workflowDAO = new WarehouseWorkflowDAO();
 
@@ -80,6 +81,13 @@ public class WarehouseWorkflowBUS extends PermissionBUS {
         return workflowDAO.findApprovalItems(SessionManager.getCurrentBranchId(), type, status);
     }
 
+    public List<WarehouseSlipLine> loadStocktakeDetails(String slipId)
+            throws DatabaseException, PermissionException, ValidationException {
+        requireRole("QUAN_LY_CHI_NHANH", "IT_ADMIN");
+        ValidationUtils.requireText(slipId, "Mã phiếu");
+        return workflowDAO.findStocktakeDetails(slipId);
+    }
+
     public void approve(String type, String slipId) throws ValidationException, PermissionException, DatabaseException {
         requireRole("QUAN_LY_CHI_NHANH", "IT_ADMIN");
         ValidationUtils.requireText(type, "Loại phiếu");
@@ -98,10 +106,10 @@ public class WarehouseWorkflowBUS extends PermissionBUS {
 
     private void prepareAndValidateImport(WarehouseSlip slip, String status) throws ValidationException, DatabaseException {
         prepareCommonSlip(slip, WarehouseSlipType.IMPORT, status);
-        ValidationUtils.requireText(slip.getSupplierId(), "Nha cung cap");
+        ValidationUtils.requireText(slip.getSupplierId(), "Nhà cung cấp");
         for (WarehouseSlipLine line : slip.getLines()) {
             validateLineIdentity(line);
-            validatePositive(line.getQuantity(), "So luong nhap");
+            validatePositive(line.getQuantity(), "Số lượng nhập");
         }
     }
 
@@ -111,7 +119,7 @@ public class WarehouseWorkflowBUS extends PermissionBUS {
         List<InventoryItem> materials = workflowDAO.findMaterialsByWarehouse(slip.getKhoId());
         for (WarehouseSlipLine line : slip.getLines()) {
             validateLineIdentity(line);
-            validatePositive(line.getQuantity(), "So luong xuat");
+            validatePositive(line.getQuantity(), "Số lượng xuất");
             InventoryItem item = materials.stream()
                     .filter(material -> material.getItemCode().equals(line.getItemId()))
                     .findFirst()
@@ -128,7 +136,7 @@ public class WarehouseWorkflowBUS extends PermissionBUS {
         for (WarehouseSlipLine line : slip.getLines()) {
             validateLineIdentity(line);
             if (line.getActualQuantity() == null || line.getActualQuantity().compareTo(BigDecimal.ZERO) < 0) {
-                throw new ValidationException("So luong thuc te phai >= 0.");
+                throw new ValidationException("Số lượng thực tế phải lớn hơn hoặc bằng 0.");
             }
             BigDecimal systemQty = materials.stream()
                     .filter(material -> material.getItemCode().equals(line.getItemId()))
@@ -136,9 +144,9 @@ public class WarehouseWorkflowBUS extends PermissionBUS {
                     .map(InventoryItem::getQuantityOnHand)
                     .orElseThrow(() -> new ValidationException("Nguyên liệu " + line.getItemId() + " không hợp lệ."));
             line.setSystemQuantity(systemQty);
-            BigDecimal delta = line.getActualQuantity().subtract(systemQty).abs();
-            if (delta.compareTo(STOCKTAKE_EXPLANATION_THRESHOLD) > 0 && (line.getNote() == null || line.getNote().isBlank())) {
-                throw new ValidationException("Cần giải trình khi chênh lệch kiểm kê vượt ngưỡng.");
+            if (requiresStocktakeExplanation(systemQty, line.getActualQuantity())
+                    && (line.getNote() == null || line.getNote().isBlank())) {
+                throw new ValidationException("Cần nhập giải trình cho các dòng kiểm kê có chênh lệch vượt 2%.");
             }
         }
     }
@@ -174,6 +182,22 @@ public class WarehouseWorkflowBUS extends PermissionBUS {
         if (value == null || value.compareTo(BigDecimal.ZERO) <= 0) {
             throw new ValidationException(fieldName + " phải lớn hơn 0.");
         }
+    }
+
+    private boolean requiresStocktakeExplanation(BigDecimal systemQty, BigDecimal actualQty) {
+        BigDecimal safeSystemQty = zeroIfNull(systemQty);
+        BigDecimal safeActualQty = zeroIfNull(actualQty);
+        BigDecimal delta = safeActualQty.subtract(safeSystemQty).abs();
+        if (safeSystemQty.compareTo(BigDecimal.ZERO) <= 0) {
+            return delta.compareTo(BigDecimal.ZERO) > 0;
+        }
+        BigDecimal percent = delta.multiply(BigDecimal.valueOf(100))
+                .divide(safeSystemQty, 4, RoundingMode.HALF_UP);
+        return percent.compareTo(STOCKTAKE_EXPLANATION_THRESHOLD_PERCENT) > 0;
+    }
+
+    private BigDecimal zeroIfNull(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
     private String generateSlipId(String type) {

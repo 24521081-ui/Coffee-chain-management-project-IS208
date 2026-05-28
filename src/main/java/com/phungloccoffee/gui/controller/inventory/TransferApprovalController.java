@@ -1,6 +1,13 @@
 package com.phungloccoffee.gui.controller.inventory;
 
+import com.phungloccoffee.bus.WarehouseTransferBUS;
+import com.phungloccoffee.exception.DatabaseException;
+import com.phungloccoffee.exception.PermissionException;
+import com.phungloccoffee.exception.ValidationException;
 import com.phungloccoffee.gui.util.IconFactory;
+import com.phungloccoffee.model.WarehouseTransferLine;
+import com.phungloccoffee.model.WarehouseTransferSlip;
+import com.phungloccoffee.util.AlertUtils;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -17,10 +24,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
+import java.util.stream.Collectors;
+
 public class TransferApprovalController {
-    private static final String STATUS_PENDING = "Ch\u1edd duy\u1ec7t";
-    private static final String STATUS_APPROVED = "\u0110\u00e3 duy\u1ec7t";
-    private static final String STATUS_REJECTED = "T\u1eeb ch\u1ed1i";
+    private static final String STATUS_PENDING = "Chờ duyệt";
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @FXML private TableView<Row> transferTable;
     @FXML private TableColumn<Row, String> codeColumn;
@@ -34,11 +44,8 @@ public class TransferApprovalController {
     @FXML private StackPane transferTabIconContainer;
     @FXML private StackPane detailTabIconContainer;
 
-    private final ObservableList<Row> rows = FXCollections.observableArrayList(
-            new Row("PDC-001", "NV_002", "Kho CN01", "Kho CN02", "19/07/2026", 5, STATUS_PENDING),
-            new Row("PDC-002", "NV_004", "Kho CN01", "Kho CN03", "18/07/2026", 8, STATUS_APPROVED),
-            new Row("PDC-003", "NV_002", "Kho CN02", "Kho CN01", "17/07/2026", 3, STATUS_REJECTED)
-    );
+    private final WarehouseTransferBUS transferBUS = new WarehouseTransferBUS();
+    private final ObservableList<Row> rows = FXCollections.observableArrayList();
 
     @FXML
     private void initialize() {
@@ -63,36 +70,50 @@ public class TransferApprovalController {
 
         transferTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         transferTable.setItems(rows);
+
+        loadTransfers();
+    }
+
+    private void loadTransfers() {
+        try {
+            rows.setAll(transferBUS.loadPendingTransfers().stream().map(Row::from).toList());
+        } catch (DatabaseException | PermissionException e) {
+            AlertUtils.showError(e.getMessage());
+            rows.clear();
+        }
     }
 
     private void approve(Row row) {
-        row.setStatus(STATUS_APPROVED);
-        transferTable.refresh();
+        try {
+            transferBUS.approveTransfer(row.getCode());
+            AlertUtils.showInfo("Đã duyệt phiếu điều chuyển kho.");
+            loadTransfers();
+        } catch (ValidationException | PermissionException | DatabaseException e) {
+            AlertUtils.showError(e.getMessage());
+        }
     }
 
     private void reject(Row row) {
-        row.setStatus(STATUS_REJECTED);
-        transferTable.refresh();
+        try {
+            transferBUS.rejectTransfer(row.getCode());
+            AlertUtils.showInfo("Đã từ chối phiếu điều chuyển kho.");
+            loadTransfers();
+        } catch (ValidationException | PermissionException | DatabaseException e) {
+            AlertUtils.showError(e.getMessage());
+        }
     }
 
     private void showDetails(Row row) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Chi ti\u1ebft phi\u1ebfu \u0111i\u1ec1u chuy\u1ec3n");
+        alert.setTitle("Chi tiết phiếu điều chuyển");
         alert.setHeaderText(row.getCode() + " - " + row.getStatus());
-        alert.setContentText("Ng\u01b0\u1eddi l\u1eadp: " + row.getCreator()
-                + "\nKho ngu\u1ed3n: " + row.getSource()
-                + "\nKho \u0111\u00edch: " + row.getTarget()
-                + "\nNg\u00e0y l\u1eadp: " + row.getDate()
-                + "\nS\u1ed1 l\u01b0\u1ee3ng m\u1eb7t h\u00e0ng: " + row.getItemCount());
+        alert.setContentText("Người lập: " + row.getCreator()
+                + "\nKho nguồn: " + row.getSource()
+                + "\nKho đích: " + row.getTarget()
+                + "\nNgày lập: " + row.getDate()
+                + "\nSố lượng mặt hàng: " + row.getItemCount()
+                + "\n\nChi tiết:\n" + row.getDetails());
         alert.showAndWait();
-    }
-
-    private static String statusStyle(String status) {
-        return switch (status) {
-            case STATUS_APPROVED -> "badge-approved";
-            case STATUS_REJECTED -> "badge-rejected";
-            default -> "badge-pending";
-        };
     }
 
     private static String splitCode(String code) {
@@ -184,7 +205,7 @@ public class TransferApprovalController {
                 return;
             }
             Label badge = new Label(status);
-            badge.getStyleClass().addAll("badge", statusStyle(status));
+            badge.getStyleClass().addAll("badge", "badge-pending");
             setGraphic(badge);
             setText(null);
             setAlignment(Pos.CENTER);
@@ -206,25 +227,20 @@ public class TransferApprovalController {
             actionStack.setAlignment(Pos.CENTER);
 
             Button detail = new Button("Xem");
+            detail.getStyleClass().add("btn-text-blue");
             detail.setOnAction(event -> showDetails(row));
 
-            if (STATUS_PENDING.equals(row.getStatus())) {
-                detail.getStyleClass().add("btn-text-blue");
-                Button approve = new Button("Duy\u1ec7t");
-                approve.getStyleClass().add("btn-approve");
-                approve.setOnAction(event -> approve(row));
+            Button approve = new Button("Duyệt");
+            approve.getStyleClass().add("btn-approve");
+            approve.setOnAction(event -> approve(row));
 
-                Button reject = new Button("T\u1eeb ch\u1ed1i");
-                reject.getStyleClass().add("btn-reject");
-                reject.setOnAction(event -> reject(row));
+            Button reject = new Button("Từ chối");
+            reject.getStyleClass().add("btn-reject");
+            reject.setOnAction(event -> reject(row));
 
-                HBox actionRow = new HBox(6, approve, reject);
-                actionRow.setAlignment(Pos.CENTER);
-                actionStack.getChildren().addAll(detail, actionRow);
-            } else {
-                detail.getStyleClass().add("btn-view-bg");
-                actionStack.getChildren().add(detail);
-            }
+            HBox actionRow = new HBox(6, approve, reject);
+            actionRow.setAlignment(Pos.CENTER);
+            actionStack.getChildren().addAll(detail, actionRow);
 
             setGraphic(actionStack);
             setText(null);
@@ -240,8 +256,9 @@ public class TransferApprovalController {
         private final SimpleStringProperty date;
         private final SimpleIntegerProperty itemCount;
         private final SimpleStringProperty status;
+        private final String details;
 
-        public Row(String code, String creator, String source, String target, String date, int itemCount, String status) {
+        public Row(String code, String creator, String source, String target, String date, int itemCount, String status, String details) {
             this.code = new SimpleStringProperty(code);
             this.creator = new SimpleStringProperty(creator);
             this.source = new SimpleStringProperty(source);
@@ -249,6 +266,28 @@ public class TransferApprovalController {
             this.date = new SimpleStringProperty(date);
             this.itemCount = new SimpleIntegerProperty(itemCount);
             this.status = new SimpleStringProperty(status);
+            this.details = details;
+        }
+
+        public static Row from(WarehouseTransferSlip slip) {
+            String detailText = slip.getLines().stream()
+                    .map(Row::formatLine)
+                    .collect(Collectors.joining("\n"));
+            return new Row(
+                    slip.getSlipId(),
+                    slip.getCreatedBy(),
+                    slip.getSourceWarehouseName(),
+                    slip.getTargetWarehouseName(),
+                    slip.getCreatedAt() == null ? "" : DATE_FORMATTER.format(slip.getCreatedAt()),
+                    slip.getLines().size(),
+                    STATUS_PENDING,
+                    detailText
+            );
+        }
+
+        private static String formatLine(WarehouseTransferLine line) {
+            BigDecimal quantity = line.getQuantity() == null ? BigDecimal.ZERO : line.getQuantity().stripTrailingZeros();
+            return line.getItemId() + " - " + line.getItemName() + ": " + quantity.toPlainString() + " " + line.getUnit();
         }
 
         public SimpleStringProperty codeProperty() { return code; }
@@ -265,6 +304,6 @@ public class TransferApprovalController {
         public String getDate() { return date.get(); }
         public int getItemCount() { return itemCount.get(); }
         public String getStatus() { return status.get(); }
-        public void setStatus(String value) { status.set(value); }
+        public String getDetails() { return details; }
     }
 }

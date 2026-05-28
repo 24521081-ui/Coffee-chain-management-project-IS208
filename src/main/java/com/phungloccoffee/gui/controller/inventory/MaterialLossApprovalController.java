@@ -1,6 +1,11 @@
 package com.phungloccoffee.gui.controller.inventory;
 
+import com.phungloccoffee.bus.MaterialLossBUS;
+import com.phungloccoffee.exception.DatabaseException;
+import com.phungloccoffee.exception.PermissionException;
 import com.phungloccoffee.gui.util.IconFactory;
+import com.phungloccoffee.model.MaterialLossRecord;
+import com.phungloccoffee.util.AlertUtils;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -12,14 +17,15 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
+
 public class MaterialLossApprovalController {
-    private static final String STATUS_PENDING = "Ch\u1edd duy\u1ec7t";
-    private static final String STATUS_APPROVED = "\u0110\u00e3 duy\u1ec7t";
-    private static final String STATUS_REJECTED = "T\u1eeb ch\u1ed1i";
+    private static final String STATUS_RECORDED = "Đã ghi nhận";
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @FXML private TableView<Row> lossTable;
     @FXML private TableColumn<Row, String> codeColumn;
@@ -33,11 +39,8 @@ public class MaterialLossApprovalController {
     @FXML private StackPane lossTabIconContainer;
     @FXML private StackPane detailTabIconContainer;
 
-    private final ObservableList<Row> rows = FXCollections.observableArrayList(
-            new Row("HH-001", "NV_002", "S\u1eefa t\u01b0\u01a1i", "2 L", "\u0110\u1ed5 v\u1ee1 trong ca", "19/07/2026", STATUS_PENDING),
-            new Row("HH-002", "NV_003", "C\u00e0 ph\u00ea h\u1ea1t", "1.5 kg", "Hao h\u1ee5t ki\u1ec3m k\u00ea", "18/07/2026", STATUS_APPROVED),
-            new Row("HH-003", "NV_002", "Ly gi\u1ea5y", "20 c\u00e1i", "H\u01b0 h\u1ecfng bao b\u00ec", "17/07/2026", STATUS_REJECTED)
-    );
+    private final MaterialLossBUS materialLossBUS = new MaterialLossBUS();
+    private final ObservableList<Row> rows = FXCollections.observableArrayList();
 
     @FXML
     private void initialize() {
@@ -54,44 +57,37 @@ public class MaterialLossApprovalController {
 
         codeColumn.setCellFactory(column -> new CodeCell());
         creatorColumn.setCellFactory(column -> new CreatorCell());
-        materialColumn.setCellFactory(column -> new WrapTextCell<>(160));
+        materialColumn.setCellFactory(column -> new WrapTextCell<>(180));
         quantityColumn.setCellFactory(column -> new QuantityCell());
-        reasonColumn.setCellFactory(column -> new WrapTextCell<>(230));
+        reasonColumn.setCellFactory(column -> new WrapTextCell<>(240));
         statusColumn.setCellFactory(column -> new StatusCell());
         actionColumn.setCellFactory(column -> new ActionCell());
 
         lossTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         lossTable.setItems(rows);
+        loadRows();
     }
 
-    private void approve(Row row) {
-        row.setStatus(STATUS_APPROVED);
-        lossTable.refresh();
-    }
-
-    private void reject(Row row) {
-        row.setStatus(STATUS_REJECTED);
-        lossTable.refresh();
+    private void loadRows() {
+        try {
+            rows.setAll(materialLossBUS.loadLossHistory().stream().map(Row::from).toList());
+        } catch (DatabaseException | PermissionException e) {
+            AlertUtils.showError(e.getMessage());
+            rows.clear();
+        }
     }
 
     private void showDetails(Row row) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Chi ti\u1ebft hao h\u1ee5t");
+        alert.setTitle("Chi tiết hao hụt nguyên liệu");
         alert.setHeaderText(row.getCode() + " - " + row.getStatus());
-        alert.setContentText("Ng\u01b0\u1eddi l\u1eadp: " + row.getCreator()
-                + "\nNguy\u00ean li\u1ec7u: " + row.getMaterial()
-                + "\nS\u1ed1 l\u01b0\u1ee3ng: " + row.getQuantity()
-                + "\nL\u00fd do: " + row.getReason()
-                + "\nNg\u00e0y ghi nh\u1eadn: " + row.getDate());
+        alert.setContentText("Nguồn dữ liệu: Cơ sở dữ liệu thật"
+                + "\nNguyên liệu: " + row.getMaterial()
+                + "\nSố lượng: " + row.getQuantity()
+                + "\nLý do: " + row.getReason()
+                + "\nNgày ghi nhận: " + row.getDate()
+                + "\n\nLưu ý: Schema hao hụt hiện tại chưa có trạng thái phê duyệt riêng, nên màn này đang phục vụ tra cứu và đối chiếu.");
         alert.showAndWait();
-    }
-
-    private static String statusStyle(String status) {
-        return switch (status) {
-            case STATUS_APPROVED -> "badge-approved";
-            case STATUS_REJECTED -> "badge-rejected";
-            default -> "badge-pending";
-        };
     }
 
     private class CodeCell extends TableCell<Row, String> {
@@ -180,7 +176,7 @@ public class MaterialLossApprovalController {
                 return;
             }
             Label badge = new Label(status);
-            badge.getStyleClass().addAll("badge", statusStyle(status));
+            badge.getStyleClass().addAll("badge", "badge-approved");
             setGraphic(badge);
             setText(null);
             setAlignment(Pos.CENTER);
@@ -196,32 +192,13 @@ public class MaterialLossApprovalController {
                 setText(null);
                 return;
             }
-
             Row row = getTableRow().getItem();
             VBox actionStack = new VBox(6);
             actionStack.setAlignment(Pos.CENTER);
-
             Button detail = new Button("Xem");
+            detail.getStyleClass().add("btn-view-bg");
             detail.setOnAction(event -> showDetails(row));
-
-            if (STATUS_PENDING.equals(row.getStatus())) {
-                detail.getStyleClass().add("btn-text-blue");
-                Button approve = new Button("Duy\u1ec7t");
-                approve.getStyleClass().add("btn-approve");
-                approve.setOnAction(event -> approve(row));
-
-                Button reject = new Button("T\u1eeb ch\u1ed1i");
-                reject.getStyleClass().add("btn-reject");
-                reject.setOnAction(event -> reject(row));
-
-                HBox actionRow = new HBox(6, approve, reject);
-                actionRow.setAlignment(Pos.CENTER);
-                actionStack.getChildren().addAll(detail, actionRow);
-            } else {
-                detail.getStyleClass().add("btn-view-bg");
-                actionStack.getChildren().add(detail);
-            }
-
+            actionStack.getChildren().add(detail);
             setGraphic(actionStack);
             setText(null);
             setAlignment(Pos.CENTER);
@@ -247,6 +224,19 @@ public class MaterialLossApprovalController {
             this.status = new SimpleStringProperty(status);
         }
 
+        public static Row from(MaterialLossRecord record) {
+            BigDecimal quantity = record.getQuantity() == null ? BigDecimal.ZERO : record.getQuantity().stripTrailingZeros();
+            return new Row(
+                    record.getLossId(),
+                    "N/A",
+                    record.getMaterialId() + " - " + record.getMaterialName(),
+                    quantity.toPlainString() + " " + (record.getUnit() == null ? "" : record.getUnit()),
+                    record.getReason(),
+                    record.getCreatedAt() == null ? "" : DATE_FORMATTER.format(record.getCreatedAt()),
+                    STATUS_RECORDED
+            );
+        }
+
         public SimpleStringProperty codeProperty() { return code; }
         public SimpleStringProperty creatorProperty() { return creator; }
         public SimpleStringProperty materialProperty() { return material; }
@@ -255,12 +245,11 @@ public class MaterialLossApprovalController {
         public SimpleStringProperty dateProperty() { return date; }
         public SimpleStringProperty statusProperty() { return status; }
         public String getCode() { return code.get(); }
-        public String getCreator() { return creator.get(); }
         public String getMaterial() { return material.get(); }
         public String getQuantity() { return quantity.get(); }
         public String getReason() { return reason.get(); }
         public String getDate() { return date.get(); }
         public String getStatus() { return status.get(); }
-        public void setStatus(String value) { status.set(value); }
+        public String getCreator() { return creator.get(); }
     }
 }

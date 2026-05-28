@@ -15,19 +15,19 @@
         <HBox alignment="CENTER_LEFT" spacing="12">
             <VBox spacing="4">
                 <Label text="Duyệt phiếu kiểm kê kho" styleClass="section-title" />
-                <Label text="Quản lý chi nhánh duyệt hoặc từ chối các phiếu kiểm kê đang chờ duyệt." styleClass="section-subtitle" />
+                <Label text="Quản lý chi nhánh xem chi tiết, duyệt hoặc từ chối các phiếu kiểm kê đang chờ duyệt." styleClass="section-subtitle" />
             </VBox>
             <Region HBox.hgrow="ALWAYS" />
         </HBox>
         <TableView fx:id="stocktakeTable" prefHeight="520" VBox.vgrow="ALWAYS" styleClass="page-table">
             <columns>
-                <TableColumn fx:id="codeColumn" text="MÃ PHIẾU" prefWidth="140" />
-                <TableColumn fx:id="creatorColumn" text="NGƯỜI LẬP" prefWidth="120" />
-                <TableColumn fx:id="dateColumn" text="NGÀY LẬP" prefWidth="160" />
-                <TableColumn fx:id="noteColumn" text="GHI CHÚ" prefWidth="260" />
-                <TableColumn fx:id="itemCountColumn" text="SL MẶT HÀNG" prefWidth="120" />
-                <TableColumn fx:id="statusColumn" text="TRẠNG THÁI" prefWidth="120" />
-                <TableColumn fx:id="actionColumn" text="HÀNH ĐỘNG" prefWidth="180" />
+                <TableColumn fx:id="codeColumn" text="Mã phiếu" prefWidth="140" />
+                <TableColumn fx:id="creatorColumn" text="Người lập" prefWidth="120" />
+                <TableColumn fx:id="dateColumn" text="Ngày lập" prefWidth="160" />
+                <TableColumn fx:id="noteColumn" text="Ghi chú / giải trình" prefWidth="260" />
+                <TableColumn fx:id="itemCountColumn" text="SL mặt hàng" prefWidth="120" />
+                <TableColumn fx:id="statusColumn" text="Trạng thái" prefWidth="120" />
+                <TableColumn fx:id="actionColumn" text="Hành động" prefWidth="280" />
             </columns>
         </TableView>
     </VBox>

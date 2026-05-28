@@ -1,6 +1,13 @@
 package com.phungloccoffee.gui.controller.inventory;
 
+import com.phungloccoffee.bus.SupplierBUS;
+import com.phungloccoffee.exception.DatabaseException;
+import com.phungloccoffee.exception.PermissionException;
+import com.phungloccoffee.model.SupplierDirectoryItem;
+import com.phungloccoffee.util.AlertUtils;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -9,10 +16,21 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 public class SupplierListController {
+    private static final String ALL_CATEGORY = "Tất cả nhóm";
+    private static final String ALL_STATUS = "Tất cả trạng thái";
+    private static final String STATUS_ACTIVE = "Đang hợp tác";
+    private static final String STATUS_INACTIVE = "Tạm dừng";
+
+    @FXML private TextField searchField;
     @FXML private ComboBox<String> categoryComboBox;
     @FXML private ComboBox<String> statusComboBox;
     @FXML private TableView<SupplierRow> supplierTable;
@@ -24,10 +42,14 @@ public class SupplierListController {
     @FXML private TableColumn<SupplierRow, String> statusColumn;
     @FXML private TableColumn<SupplierRow, Void> actionColumn;
 
+    private final SupplierBUS supplierBUS = new SupplierBUS();
+    private final ObservableList<SupplierRow> allRows = FXCollections.observableArrayList();
+    private final ObservableList<SupplierRow> filteredRows = FXCollections.observableArrayList();
+
     @FXML
     private void initialize() {
-        categoryComboBox.getItems().setAll("Tất cả nhóm", "Cà phê", "Sữa", "Bao bì", "Syrup");
-        statusComboBox.getItems().setAll("Tất cả trạng thái", "Đang hợp tác", "Tạm dừng");
+        categoryComboBox.getItems().setAll(ALL_CATEGORY);
+        statusComboBox.getItems().setAll(ALL_STATUS, STATUS_ACTIVE, STATUS_INACTIVE);
         categoryComboBox.getSelectionModel().selectFirst();
         statusComboBox.getSelectionModel().selectFirst();
 
@@ -39,14 +61,66 @@ public class SupplierListController {
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
         statusColumn.setCellFactory(column -> new StatusCell<>());
         actionColumn.setCellFactory(column -> new ActionCell());
+
         supplierTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        supplierTable.setItems(FXCollections.observableArrayList(
-                new SupplierRow("NCC001", "Công ty cà phê Phụng Lộc", "Cà phê", "Nguyễn Minh", "0902000001", "Đang hợp tác"),
-                new SupplierRow("NCC002", "Vinamilk Food Service", "Sữa", "Trần Lan", "0902000002", "Đang hợp tác"),
-                new SupplierRow("NCC003", "Bao bì An Phát", "Bao bì", "Lê Tuấn", "0902000003", "Đang hợp tác"),
-                new SupplierRow("NCC004", "Sweet Syrup Việt Nam", "Syrup", "Phạm Huy", "0902000004", "Đang hợp tác"),
-                new SupplierRow("NCC005", "Nguyên liệu Á Châu", "Khác", "Đỗ An", "0902000005", "Tạm dừng")
-        ));
+        supplierTable.setItems(filteredRows);
+
+        searchField.textProperty().addListener((obs, oldValue, newValue) -> applyFilter());
+        categoryComboBox.valueProperty().addListener((obs, oldValue, newValue) -> applyFilter());
+        statusComboBox.valueProperty().addListener((obs, oldValue, newValue) -> applyFilter());
+
+        loadSuppliers();
+    }
+
+    private void loadSuppliers() {
+        try {
+            List<SupplierDirectoryItem> suppliers = supplierBUS.loadSuppliers();
+            allRows.setAll(suppliers.stream().map(SupplierRow::from).toList());
+            populateCategoryFilter();
+            applyFilter();
+        } catch (DatabaseException | PermissionException e) {
+            AlertUtils.showError(e.getMessage());
+            allRows.clear();
+            filteredRows.clear();
+        }
+    }
+
+    private void populateCategoryFilter() {
+        Set<String> categories = new LinkedHashSet<>();
+        categories.add(ALL_CATEGORY);
+        allRows.stream()
+                .map(SupplierRow::getCategory)
+                .filter(value -> value != null && !value.isBlank())
+                .forEach(categories::add);
+        categoryComboBox.getItems().setAll(categories);
+        categoryComboBox.getSelectionModel().selectFirst();
+    }
+
+    private void applyFilter() {
+        String keyword = searchField.getText() == null ? "" : searchField.getText().trim().toLowerCase();
+        String category = categoryComboBox.getValue();
+        String status = statusComboBox.getValue();
+
+        filteredRows.setAll(allRows.stream().filter(row -> {
+            boolean matchesKeyword = keyword.isBlank()
+                    || row.getCode().toLowerCase().contains(keyword)
+                    || row.getName().toLowerCase().contains(keyword)
+                    || row.getPhone().toLowerCase().contains(keyword)
+                    || row.getContact().toLowerCase().contains(keyword);
+            boolean matchesCategory = category == null || ALL_CATEGORY.equals(category) || row.getCategory().equals(category);
+            boolean matchesStatus = status == null || ALL_STATUS.equals(status) || row.getStatus().equals(status);
+            return matchesKeyword && matchesCategory && matchesStatus;
+        }).toList());
+    }
+
+    private void showDetails(SupplierRow row) {
+        AlertUtils.showInfo("Mã NCC: " + row.getCode()
+                + "\nNhà cung cấp: " + row.getName()
+                + "\nNhóm hàng: " + row.getCategory()
+                + "\nLiên hệ: " + row.getContact()
+                + "\nĐiện thoại: " + row.getPhone()
+                + "\nEmail: " + row.getEmail()
+                + "\nTrạng thái: " + row.getStatus());
     }
 
     private static class StatusCell<T> extends TableCell<T, String> {
@@ -59,23 +133,27 @@ public class SupplierListController {
                 return;
             }
             Label badge = new Label(status);
-            badge.getStyleClass().addAll("status-badge", "Đang hợp tác".equals(status) ? "status-success" : "status-warning");
+            badge.getStyleClass().addAll("status-badge", STATUS_ACTIVE.equals(status) ? "status-success" : "status-warning");
             setGraphic(badge);
             setText(null);
             setAlignment(Pos.CENTER_LEFT);
         }
     }
 
-    private static class ActionCell extends TableCell<SupplierRow, Void> {
+    private class ActionCell extends TableCell<SupplierRow, Void> {
         private final HBox box = new HBox(8);
         private final Button viewButton = new Button("Xem");
-        private final Button editButton = new Button("Sửa");
 
         ActionCell() {
             viewButton.getStyleClass().addAll("action-button", "action-view-button");
-            editButton.getStyleClass().addAll("action-button", "action-edit-button");
+            viewButton.setOnAction(event -> {
+                SupplierRow row = getTableRow() == null ? null : getTableRow().getItem();
+                if (row != null) {
+                    showDetails(row);
+                }
+            });
             box.setAlignment(Pos.CENTER_LEFT);
-            box.getChildren().addAll(viewButton, editButton);
+            box.getChildren().add(viewButton);
         }
 
         @Override
@@ -91,15 +169,32 @@ public class SupplierListController {
         private final String category;
         private final String contact;
         private final String phone;
+        private final String email;
         private final String status;
 
-        public SupplierRow(String code, String name, String category, String contact, String phone, String status) {
+        public SupplierRow(String code, String name, String category, String contact, String phone,
+                           String email, String status) {
             this.code = code;
             this.name = name;
             this.category = category;
             this.contact = contact;
             this.phone = phone;
+            this.email = email;
             this.status = status;
+        }
+
+        public static SupplierRow from(SupplierDirectoryItem item) {
+            String statusLabel = item.getStatus() == 1 ? STATUS_ACTIVE : STATUS_INACTIVE;
+            String contact = !"Chưa cập nhật".equals(item.getEmail()) ? item.getEmail() : item.getPhone();
+            return new SupplierRow(
+                    item.getSupplierId(),
+                    item.getSupplierName(),
+                    item.getCategory(),
+                    contact,
+                    item.getPhone(),
+                    item.getEmail(),
+                    statusLabel
+            );
         }
 
         public String getCode() {
@@ -120,6 +215,10 @@ public class SupplierListController {
 
         public String getPhone() {
             return phone;
+        }
+
+        public String getEmail() {
+            return email;
         }
 
         public String getStatus() {

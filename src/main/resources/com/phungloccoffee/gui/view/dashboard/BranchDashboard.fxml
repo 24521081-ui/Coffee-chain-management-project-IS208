@@ -19,57 +19,57 @@
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-blue">
             <HBox alignment="TOP_LEFT">
                 <VBox spacing="7">
-                    <Label text="Doanh thu h&#xF4;m nay" styleClass="kpi-label" />
-                    <Label text="18.5M" styleClass="kpi-value" />
+                    <Label text="Doanh thu 7 ngày" styleClass="kpi-label" />
+                    <Label fx:id="revenueValueLabel" text="0M" styleClass="kpi-value" />
                 </VBox>
                 <Region HBox.hgrow="ALWAYS" />
                 <StackPane fx:id="revenueIcon" />
             </HBox>
-            <Label text="+12%" styleClass="kpi-badge-up" />
+            <Label fx:id="revenueGrowthLabel" text="0%" styleClass="kpi-badge-up" />
         </VBox>
 
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-green">
             <HBox alignment="TOP_LEFT">
                 <VBox spacing="7">
-                    <Label text="&#x110;&#x1A1;n h&#xE0;ng h&#xF4;m nay" styleClass="kpi-label" />
-                    <Label text="126" styleClass="kpi-value" />
+                    <Label text="Đơn hàng 7 ngày" styleClass="kpi-label" />
+                    <Label fx:id="ordersValueLabel" text="0" styleClass="kpi-value" />
                 </VBox>
                 <Region HBox.hgrow="ALWAYS" />
                 <StackPane fx:id="ordersIcon" />
             </HBox>
-            <Label text="+8%" styleClass="kpi-badge-up" />
+            <Label fx:id="ordersHintLabel" text="7 ngày gần nhất" styleClass="kpi-badge-neutral" />
         </VBox>
 
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-orange">
             <HBox alignment="TOP_LEFT">
                 <VBox spacing="7">
-                    <Label text="Phi&#x1EBF;u ch&#x1EDD; duy&#x1EC7;t" styleClass="kpi-label" />
-                    <Label text="08" styleClass="kpi-value" />
+                    <Label text="Phiếu chờ duyệt" styleClass="kpi-label" />
+                    <Label fx:id="approvalValueLabel" text="0" styleClass="kpi-value" />
                 </VBox>
                 <Region HBox.hgrow="ALWAYS" />
                 <StackPane fx:id="approvalIcon" />
             </HBox>
-            <Label text="C&#x1EA7;n x&#x1EED; l&#xFD;" styleClass="kpi-badge-warning" />
+            <Label fx:id="approvalHintLabel" text="Cần xử lý" styleClass="kpi-badge-warning" />
         </VBox>
 
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-red">
             <HBox alignment="TOP_LEFT">
                 <VBox spacing="7">
-                    <Label text="T&#x1ED3;n kho c&#x1EA3;nh b&#xE1;o" styleClass="kpi-label" />
-                    <Label text="03" styleClass="kpi-value" />
+                    <Label text="Tồn kho cảnh báo" styleClass="kpi-label" />
+                    <Label fx:id="stockWarningValueLabel" text="0" styleClass="kpi-value" />
                 </VBox>
                 <Region HBox.hgrow="ALWAYS" />
                 <StackPane fx:id="stockIcon" />
             </HBox>
-            <Label text="Ki&#x1EC3;m tra" styleClass="kpi-badge-danger" />
+            <Label fx:id="stockWarningHintLabel" text="Kiểm tra" styleClass="kpi-badge-danger" />
         </VBox>
     </HBox>
 
     <HBox styleClass="chart-row">
         <VBox HBox.hgrow="ALWAYS" styleClass="chart-card chart-card-large">
             <VBox spacing="4">
-                <Label text="Doanh thu theo ngày" styleClass="section-title" />
-                <Label text="7 ngày gần nhất" styleClass="section-subtitle" />
+                <Label fx:id="chartTitleLabel" text="Doanh thu theo ngày" styleClass="section-title" />
+                <Label fx:id="chartSubtitleLabel" text="7 ngày gần nhất" styleClass="section-subtitle" />
             </VBox>
             <LineChart fx:id="revenueChart" animated="false" createSymbols="false" legendVisible="false" prefHeight="285" styleClass="report-chart">
                 <xAxis>
@@ -84,23 +84,23 @@
         <VBox prefWidth="330" styleClass="info-card">
             <VBox spacing="4">
                 <Label text="Tình trạng phiếu kho" styleClass="section-title" />
-                <Label text="Tổng hợp xử lý trong ngày" styleClass="section-subtitle" />
+                <Label text="Tổng hợp xử lý hiện tại của chi nhánh" styleClass="section-subtitle" />
             </VBox>
             <VBox spacing="14">
                 <HBox alignment="CENTER_LEFT" styleClass="report-list-row">
-                    <Label text="Ch&#x1EDD; duy&#x1EC7;t" styleClass="report-list-label" />
+                    <Label text="Chờ duyệt" styleClass="report-list-label" />
                     <Region HBox.hgrow="ALWAYS" />
-                    <Label text="8" styleClass="badge badge-pending" />
+                    <Label fx:id="pendingCountLabel" text="0" styleClass="badge badge-pending" />
                 </HBox>
                 <HBox alignment="CENTER_LEFT" styleClass="report-list-row">
-                    <Label text="&#x110;&#xE3; duy&#x1EC7;t" styleClass="report-list-label" />
+                    <Label text="Đã duyệt" styleClass="report-list-label" />
                     <Region HBox.hgrow="ALWAYS" />
-                    <Label text="21" styleClass="badge badge-approved" />
+                    <Label fx:id="approvedCountLabel" text="0" styleClass="badge badge-approved" />
                 </HBox>
                 <HBox alignment="CENTER_LEFT" styleClass="report-list-row">
-                    <Label text="T&#x1EEB; ch&#x1ED1;i" styleClass="report-list-label" />
+                    <Label text="Từ chối" styleClass="report-list-label" />
                     <Region HBox.hgrow="ALWAYS" />
-                    <Label text="2" styleClass="badge badge-rejected" />
+                    <Label fx:id="rejectedCountLabel" text="0" styleClass="badge badge-rejected" />
                 </HBox>
             </VBox>
         </VBox>
@@ -109,14 +109,14 @@
     <VBox styleClass="table-card" VBox.vgrow="ALWAYS">
         <VBox spacing="4">
             <Label text="Hoạt động gần đây" styleClass="section-title" />
-            <Label text="Các tác vụ vận hành mới nhất của chi nhánh" styleClass="section-subtitle" />
+            <Label text="Các tác vụ mới nhất đang chờ quản lý xử lý" styleClass="section-subtitle" />
         </VBox>
         <TableView fx:id="activityTable" prefHeight="310" styleClass="page-table">
             <columns>
-                <TableColumn fx:id="activityColumn" text="Ho&#x1EA1;t &#x111;&#x1ED9;ng" prefWidth="320" />
-                <TableColumn fx:id="ownerColumn" text="Ng&#x1B0;&#x1EDD;i ph&#x1EE5; tr&#xE1;ch" prefWidth="180" />
-                <TableColumn fx:id="timeColumn" text="Th&#x1EDD;i gian" prefWidth="130" />
-                <TableColumn fx:id="statusColumn" text="Tr&#x1EA1;ng th&#xE1;i" prefWidth="160" />
+                <TableColumn fx:id="activityColumn" text="Hoạt động" prefWidth="320" />
+                <TableColumn fx:id="ownerColumn" text="Người phụ trách" prefWidth="180" />
+                <TableColumn fx:id="timeColumn" text="Thời gian" prefWidth="130" />
+                <TableColumn fx:id="statusColumn" text="Trạng thái" prefWidth="160" />
             </columns>
         </TableView>
     </VBox>

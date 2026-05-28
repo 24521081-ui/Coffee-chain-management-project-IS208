@@ -18,16 +18,18 @@
       styleClass="page-root">
     <VBox styleClass="form-card" spacing="18">
         <VBox spacing="4">
-            <Label text="Ghi nhận hao hụt" styleClass="section-title" />
-            <Label text="Nhập nguyên liệu hao hụt và lý do kiểm soát" styleClass="section-subtitle" />
+            <Label text="Ghi nhận hao hụt nguyên liệu" styleClass="section-title" />
+            <Label text="Chọn nguyên liệu thật trong kho chi nhánh, nhập số lượng và lý do hao hụt" styleClass="section-subtitle" />
         </VBox>
         <GridPane styleClass="form-grid">
             <Label text="Nguyên liệu" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0" />
             <ComboBox fx:id="materialComboBox" promptText="Chọn nguyên liệu" prefWidth="260" styleClass="page-combo" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-            <Label text="Số lượng" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+            <Label text="Số lượng hao hụt" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="0" />
             <TextField fx:id="quantityField" promptText="0" prefWidth="160" styleClass="page-input" GridPane.columnIndex="3" GridPane.rowIndex="0" />
-            <Label text="Lý do" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-            <TextArea fx:id="reasonArea" promptText="Vỡ, hư hỏng, hao hụt kiểm kê..." prefRowCount="2" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="3" />
+            <Label text="Lý do hao hụt" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+            <ComboBox fx:id="reasonComboBox" promptText="Chọn lý do" prefWidth="260" styleClass="page-combo" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <Label text="Ghi chú" styleClass="field-label" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            <TextArea fx:id="noteArea" promptText="Nhập mô tả thêm nếu cần, đặc biệt khi chọn lý do Khác" prefRowCount="2" GridPane.columnIndex="3" GridPane.rowIndex="1" />
         </GridPane>
         <HBox styleClass="form-actions">
             <Region HBox.hgrow="ALWAYS" />
@@ -37,15 +39,15 @@
 
     <VBox styleClass="table-card" VBox.vgrow="ALWAYS">
         <VBox spacing="4">
-            <Label text="Lịch sử hao hụt" styleClass="section-title" />
-            <Label text="Các ghi nhận chờ quản lý duyệt" styleClass="section-subtitle" />
+            <Label text="Lịch sử hao hụt nguyên liệu" styleClass="section-title" />
+            <Label text="Danh sách bản ghi hao hụt thật đang lưu trong cơ sở dữ liệu" styleClass="section-subtitle" />
         </VBox>
         <TableView fx:id="lossTable" prefHeight="430" VBox.vgrow="ALWAYS" styleClass="page-table">
             <columns>
-                <TableColumn fx:id="codeColumn" text="Mã ghi nhận" prefWidth="120" />
-                <TableColumn fx:id="materialColumn" text="Nguyên liệu" prefWidth="220" />
-                <TableColumn fx:id="quantityColumn" text="Số lượng" prefWidth="120" />
-                <TableColumn fx:id="reasonColumn" text="Lý do" prefWidth="260" />
+                <TableColumn fx:id="codeColumn" text="Mã ghi nhận" prefWidth="150" />
+                <TableColumn fx:id="materialColumn" text="Nguyên liệu" prefWidth="240" />
+                <TableColumn fx:id="quantityColumn" text="Số lượng" prefWidth="140" />
+                <TableColumn fx:id="reasonColumn" text="Lý do / thời gian" prefWidth="320" />
                 <TableColumn fx:id="statusColumn" text="Trạng thái" prefWidth="140" />
             </columns>
         </TableView>
