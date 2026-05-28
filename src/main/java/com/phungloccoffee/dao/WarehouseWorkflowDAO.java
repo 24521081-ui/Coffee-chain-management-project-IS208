@@ -16,6 +16,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,7 @@ public class WarehouseWorkflowDAO {
     private static final String DB_STATUS_APPROVED = "DA_DUYET";
     private static final String DB_STATUS_STOCKTAKE_APPROVED = "DA_HOAN_THANH";
     private static final String DB_STATUS_REJECTED = "DA_HUY";
+    private static final String REJECTED_REASON_PREFIX = "Lý do từ chối:";
 
     public List<NhaCungCap> findActiveSuppliers() throws DatabaseException {
         String sql = """
@@ -129,22 +131,28 @@ public class WarehouseWorkflowDAO {
         }
     }
 
-    public List<WarehouseApprovalItem> findApprovalItems(String branchId, String type, String status) throws DatabaseException {
+    public List<WarehouseApprovalItem> findPendingApprovalItems(String branchId, String type) throws DatabaseException {
+        return findApprovalItems(branchId, type, true);
+    }
+
+    public List<WarehouseApprovalItem> findApprovalHistory(String branchId, String type) throws DatabaseException {
+        return findApprovalItems(branchId, type, false);
+    }
+
+    public List<WarehouseApprovalItem> findEmployeeSlipHistory(String employeeId, String branchId, String type)
+            throws DatabaseException {
         List<WarehouseApprovalItem> items = new ArrayList<>();
         if (type == null || WarehouseSlipType.IMPORT.equals(type)) {
-            items.addAll(findImportApprovals(branchId));
+            items.addAll(findImportHistory(branchId, employeeId, false));
         }
         if (type == null || WarehouseSlipType.EXPORT.equals(type)) {
-            items.addAll(findExportApprovals(branchId));
+            items.addAll(findExportHistory(branchId, employeeId, false));
         }
         if (type == null || WarehouseSlipType.STOCKTAKE.equals(type)) {
-            items.addAll(findStocktakeApprovals(branchId));
+            items.addAll(findStocktakeHistory(branchId, employeeId, false));
         }
         items.sort((left, right) -> right.getCreatedAt().compareTo(left.getCreatedAt()));
-        if (status == null || status.isBlank()) {
-            return items;
-        }
-        return items.stream().filter(item -> status.equals(item.getStatus())).toList();
+        return items;
     }
 
     public void approveSlip(String slipType, String slipId, String approvedBy) throws DatabaseException, ValidationException {
@@ -167,7 +175,8 @@ public class WarehouseWorkflowDAO {
         }
     }
 
-    public void rejectSlip(String slipType, String slipId, String approvedBy, String rejectedReason) throws DatabaseException, ValidationException {
+    public void rejectSlip(String slipType, String slipId, String approvedBy, String rejectedReason)
+            throws DatabaseException, ValidationException {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -338,77 +347,123 @@ public class WarehouseWorkflowDAO {
         }
     }
 
-    private List<WarehouseApprovalItem> findImportApprovals(String branchId) throws DatabaseException {
+    private List<WarehouseApprovalItem> findApprovalItems(String branchId, String type, boolean pendingOnly) throws DatabaseException {
+        List<WarehouseApprovalItem> items = new ArrayList<>();
+        if (type == null || WarehouseSlipType.IMPORT.equals(type)) {
+            items.addAll(findImportHistory(branchId, null, pendingOnly));
+        }
+        if (type == null || WarehouseSlipType.EXPORT.equals(type)) {
+            items.addAll(findExportHistory(branchId, null, pendingOnly));
+        }
+        if (type == null || WarehouseSlipType.STOCKTAKE.equals(type)) {
+            items.addAll(findStocktakeHistory(branchId, null, pendingOnly));
+        }
+        items.sort((left, right) -> right.getCreatedAt().compareTo(left.getCreatedAt()));
+        return items;
+    }
+
+    private List<WarehouseApprovalItem> findImportHistory(String branchId, String employeeId, boolean pendingOnly)
+            throws DatabaseException {
         String sql = """
-                SELECT pnk.phieu_nhap_id, pnk.kho_id, pnk.nhan_vien_id, pnk.ngay_nhap,
-                       pnk.so_luong_mat_hang, pnk.trang_thai, pnk.ghi_chu,
+                SELECT pnk.phieu_nhap_id AS slip_id,
+                       pnk.kho_id,
+                       pnk.nhan_vien_id,
+                       pnk.ngay_nhap AS created_at,
+                       pnk.so_luong_mat_hang,
+                       pnk.trang_thai,
+                       pnk.ghi_chu,
                        NVL(ncc.ten_nha_cung_cap, '') AS related_party
                 FROM phieu_nhap_kho pnk
                 JOIN kho k ON k.kho_id = pnk.kho_id
                 LEFT JOIN nha_cung_cap ncc ON ncc.nha_cung_cap_id = pnk.nha_cung_cap_id
                 WHERE (? IS NULL OR k.chi_nhanh_id = ?)
-                  AND pnk.trang_thai = ?
+                  AND (? IS NULL OR pnk.nhan_vien_id = ?)
+                ORDER BY pnk.ngay_nhap DESC
                 """;
-        return queryApprovalItems(sql, branchId, WarehouseSlipType.IMPORT);
+        return queryWarehouseItems(sql, branchId, employeeId, WarehouseSlipType.IMPORT, pendingOnly);
     }
 
-    private List<WarehouseApprovalItem> findExportApprovals(String branchId) throws DatabaseException {
+    private List<WarehouseApprovalItem> findExportHistory(String branchId, String employeeId, boolean pendingOnly)
+            throws DatabaseException {
         String sql = """
-                SELECT pxk.phieu_xuat_id, pxk.kho_id, pxk.nhan_vien_id, pxk.ngay_xuat,
-                       pxk.so_luong_mat_hang, pxk.trang_thai, pxk.ghi_chu,
-                       pxk.ly_do_xuat AS related_party
+                SELECT pxk.phieu_xuat_id AS slip_id,
+                       pxk.kho_id,
+                       pxk.nhan_vien_id,
+                       pxk.ngay_xuat AS created_at,
+                       pxk.so_luong_mat_hang,
+                       pxk.trang_thai,
+                       pxk.ghi_chu,
+                       NVL(pxk.ly_do_xuat, '') AS related_party
                 FROM phieu_xuat_kho pxk
                 JOIN kho k ON k.kho_id = pxk.kho_id
                 WHERE (? IS NULL OR k.chi_nhanh_id = ?)
-                  AND pxk.trang_thai = ?
+                  AND (? IS NULL OR pxk.nhan_vien_id = ?)
+                ORDER BY pxk.ngay_xuat DESC
                 """;
-        return queryApprovalItems(sql, branchId, WarehouseSlipType.EXPORT);
+        return queryWarehouseItems(sql, branchId, employeeId, WarehouseSlipType.EXPORT, pendingOnly);
     }
 
-    private List<WarehouseApprovalItem> findStocktakeApprovals(String branchId) throws DatabaseException {
+    private List<WarehouseApprovalItem> findStocktakeHistory(String branchId, String employeeId, boolean pendingOnly)
+            throws DatabaseException {
         String sql = """
-                SELECT kk.kiem_ke_id, kk.kho_id, kk.nhan_vien_id, kk.ngay_kiem_ke,
+                SELECT kk.kiem_ke_id AS slip_id,
+                       kk.kho_id,
+                       kk.nhan_vien_id,
+                       kk.ngay_kiem_ke AS created_at,
                        (SELECT COUNT(*) FROM chi_tiet_kiem_ke_kho ct WHERE ct.kiem_ke_id = kk.kiem_ke_id) AS so_luong_mat_hang,
-                       kk.trang_thai, kk.ghi_chu,
-                       kk.ghi_chu AS related_party
+                       kk.trang_thai,
+                       kk.ghi_chu,
+                       NVL(kk.ghi_chu, '') AS related_party
                 FROM kiem_ke_kho kk
                 JOIN kho k ON k.kho_id = kk.kho_id
                 WHERE (? IS NULL OR k.chi_nhanh_id = ?)
-                  AND kk.trang_thai = ?
+                  AND (? IS NULL OR kk.nhan_vien_id = ?)
+                ORDER BY kk.ngay_kiem_ke DESC
                 """;
-        return queryApprovalItems(sql, branchId, WarehouseSlipType.STOCKTAKE);
+        return queryWarehouseItems(sql, branchId, employeeId, WarehouseSlipType.STOCKTAKE, pendingOnly);
     }
 
-    private List<WarehouseApprovalItem> queryApprovalItems(String sql, String branchId, String type) throws DatabaseException {
+    private List<WarehouseApprovalItem> queryWarehouseItems(String sql, String branchId, String employeeId,
+                                                            String type, boolean pendingOnly) throws DatabaseException {
         List<WarehouseApprovalItem> items = new ArrayList<>();
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, branchId);
             stmt.setString(2, branchId);
-            stmt.setString(3, DB_STATUS_OPEN);
+            stmt.setString(3, employeeId);
+            stmt.setString(4, employeeId);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
+                    String dbStatus = rs.getString("trang_thai");
                     String note = rs.getString("ghi_chu");
-                    if (isDraftNote(note)) {
+                    String logicalStatus = toLogicalStatus(dbStatus, note);
+
+                    if (pendingOnly && !WarehouseSlipStatus.PENDING_APPROVAL.equals(logicalStatus)) {
                         continue;
                     }
+                    if (!pendingOnly && WarehouseSlipStatus.DRAFT.equals(logicalStatus) && employeeId == null) {
+                        continue;
+                    }
+
                     WarehouseApprovalItem item = new WarehouseApprovalItem();
                     item.setSlipType(type);
-                    item.setSlipId(rs.getString(1));
+                    item.setSlipId(rs.getString("slip_id"));
                     item.setKhoId(rs.getString("kho_id"));
                     item.setCreatedBy(rs.getString("nhan_vien_id"));
                     item.setRelatedParty(stripWorkflowPrefix(rs.getString("related_party")));
                     item.setReason(WarehouseSlipType.EXPORT.equals(type) ? stripWorkflowPrefix(rs.getString("related_party")) : null);
-                    item.setStatus(WarehouseSlipStatus.PENDING_APPROVAL);
-                    item.setRejectedReason(null);
+                    item.setStatus(logicalStatus);
+                    item.setRejectedReason(extractRejectedReason(note));
                     item.setItemCount(rs.getInt("so_luong_mat_hang"));
-                    item.setCreatedAt(rs.getTimestamp(4).toLocalDateTime());
+                    Timestamp createdAt = rs.getTimestamp("created_at");
+                    item.setCreatedAt(createdAt == null ? Timestamp.valueOf("1970-01-01 00:00:00").toLocalDateTime()
+                            : createdAt.toLocalDateTime());
                     items.add(item);
                 }
             }
             return items;
         } catch (SQLException e) {
-            throw new DatabaseException("Không thể tải danh sách phiếu chờ duyệt.", e);
+            throw new DatabaseException("Không thể tải danh sách phiếu kho.", e);
         }
     }
 
@@ -443,7 +498,8 @@ public class WarehouseWorkflowDAO {
         markApproved(conn, "kiem_ke_kho", "kiem_ke_id", slipId, DB_STATUS_STOCKTAKE_APPROVED);
     }
 
-    private void reject(Connection conn, String tableName, String idColumn, String slipId, String rejectedReason) throws SQLException, ValidationException {
+    private void reject(Connection conn, String tableName, String idColumn, String slipId, String rejectedReason)
+            throws SQLException, ValidationException {
         lockPendingRow(conn, tableName, idColumn, slipId);
         String currentNote = loadNote(conn, tableName, idColumn, slipId);
         String sql = "UPDATE " + tableName + " SET trang_thai = ?, ghi_chu = ? WHERE " + idColumn + " = ?";
@@ -455,7 +511,8 @@ public class WarehouseWorkflowDAO {
         }
     }
 
-    private void lockPendingRow(Connection conn, String tableName, String idColumn, String slipId) throws SQLException, ValidationException {
+    private void lockPendingRow(Connection conn, String tableName, String idColumn, String slipId)
+            throws SQLException, ValidationException {
         String sql = "SELECT trang_thai, ghi_chu FROM " + tableName + " WHERE " + idColumn + " = ? FOR UPDATE";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, slipId);
@@ -471,17 +528,11 @@ public class WarehouseWorkflowDAO {
     }
 
     private void markApproved(Connection conn, String tableName, String idColumn, String slipId) throws SQLException {
-        String sql = "UPDATE " + tableName + " SET trang_thai = ?, ghi_chu = ? WHERE " + idColumn + " = ?";
-        String currentNote = loadNote(conn, tableName, idColumn, slipId);
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, DB_STATUS_APPROVED);
-            stmt.setString(2, stripWorkflowPrefix(currentNote));
-            stmt.setString(3, slipId);
-            stmt.executeUpdate();
-        }
+        markApproved(conn, tableName, idColumn, slipId, DB_STATUS_APPROVED);
     }
 
-    private void markApproved(Connection conn, String tableName, String idColumn, String slipId, String approvedStatus) throws SQLException {
+    private void markApproved(Connection conn, String tableName, String idColumn, String slipId, String approvedStatus)
+            throws SQLException {
         String sql = "UPDATE " + tableName + " SET trang_thai = ?, ghi_chu = ? WHERE " + idColumn + " = ?";
         String currentNote = loadNote(conn, tableName, idColumn, slipId);
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -609,6 +660,19 @@ public class WarehouseWorkflowDAO {
         }
     }
 
+    private String toLogicalStatus(String dbStatus, String note) {
+        if (DB_STATUS_OPEN.equals(dbStatus)) {
+            return isDraftNote(note) ? WarehouseSlipStatus.DRAFT : WarehouseSlipStatus.PENDING_APPROVAL;
+        }
+        if (DB_STATUS_APPROVED.equals(dbStatus) || DB_STATUS_STOCKTAKE_APPROVED.equals(dbStatus)) {
+            return WarehouseSlipStatus.APPROVED;
+        }
+        if (DB_STATUS_REJECTED.equals(dbStatus)) {
+            return WarehouseSlipStatus.REJECTED;
+        }
+        return dbStatus;
+    }
+
     private String encodeNote(String logicalStatus, String note) {
         String prefix = WarehouseSlipStatus.DRAFT.equals(logicalStatus) ? NOTE_DRAFT_PREFIX : NOTE_PENDING_PREFIX;
         String cleanNote = note == null ? "" : note.trim();
@@ -637,11 +701,24 @@ public class WarehouseWorkflowDAO {
 
     private String appendRejectedReason(String note, String rejectedReason) {
         String cleanNote = stripWorkflowPrefix(note);
-        String reasonLine = "Lý do từ chối: " + rejectedReason;
+        String reasonLine = REJECTED_REASON_PREFIX + " " + rejectedReason;
         if (cleanNote == null || cleanNote.isBlank()) {
             return reasonLine;
         }
         return cleanNote + "\n" + reasonLine;
+    }
+
+    private String extractRejectedReason(String note) {
+        if (note == null || note.isBlank()) {
+            return null;
+        }
+        String[] lines = stripWorkflowPrefix(note).split("\\R");
+        for (String line : lines) {
+            if (line.startsWith(REJECTED_REASON_PREFIX)) {
+                return line.substring(REJECTED_REASON_PREFIX.length()).trim();
+            }
+        }
+        return null;
     }
 
     private BigDecimal zeroIfNull(BigDecimal value) {

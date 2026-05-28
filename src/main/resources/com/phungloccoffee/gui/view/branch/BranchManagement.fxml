@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <VBox styleClass="page-root" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.phungloccoffee.gui.controller.branch.BranchManagementController">
-    <VBox styleClass="filter-card branch-filter-card">
+    <VBox styleClass="filter-card branch-filter-card branch-filter-surface">
         <HBox styleClass="report-controls-row branch-filter-row">
             <TextField fx:id="searchField" prefHeight="26.0" prefWidth="345.0" promptText="Tìm chi nhánh, khu vực..." styleClass="filter-input branch-search-filter" />
             <ComboBox fx:id="areaFilterComboBox" prefWidth="210" promptText="Khu vực" styleClass="filter-combo branch-area-filter" />

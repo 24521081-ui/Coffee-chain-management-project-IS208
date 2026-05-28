@@ -1,15 +1,16 @@
 package com.phungloccoffee.gui.controller.branch;
 
+import com.phungloccoffee.bus.WarehouseWorkflowBUS;
 import com.phungloccoffee.exception.DatabaseException;
 import com.phungloccoffee.exception.PermissionException;
 import com.phungloccoffee.gui.service.InventoryReportService;
 import com.phungloccoffee.gui.service.RevenueReportService;
 import com.phungloccoffee.gui.util.IconFactory;
 import com.phungloccoffee.model.WarehouseApprovalItem;
+import com.phungloccoffee.model.WarehouseSlipStatus;
 import com.phungloccoffee.model.WarehouseSlipType;
 import com.phungloccoffee.util.AlertUtils;
 import com.phungloccoffee.util.SessionManager;
-import com.phungloccoffee.bus.WarehouseWorkflowBUS;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -22,6 +23,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.StackPane;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -30,6 +33,7 @@ import java.util.List;
 
 public class BranchDashboardController {
     private static final DateTimeFormatter DAY_FORMATTER = DateTimeFormatter.ofPattern("dd/MM");
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
     @FXML private Label revenueValueLabel;
     @FXML private Label revenueGrowthLabel;
@@ -80,18 +84,20 @@ public class BranchDashboardController {
         try {
             String branchId = SessionManager.getCurrentBranchId();
             LocalDate today = LocalDate.now();
+
             var revenue = revenueReportService.loadReport(today.minusDays(6), today, branchId);
             var inventory = inventoryReportService.loadReport(today.minusDays(30), today, branchId, "Tất cả nhóm", "Tất cả trạng thái");
-            List<WarehouseApprovalItem> approvals = new ArrayList<>();
-            approvals.addAll(workflowBUS.loadApprovalItems(WarehouseSlipType.IMPORT, null));
-            approvals.addAll(workflowBUS.loadApprovalItems(WarehouseSlipType.EXPORT, null));
-            approvals.addAll(workflowBUS.loadApprovalItems(WarehouseSlipType.STOCKTAKE, null));
+
+            List<WarehouseApprovalItem> pendingApprovals = new ArrayList<>();
+            pendingApprovals.addAll(workflowBUS.loadPendingApprovalItems(WarehouseSlipType.IMPORT));
+            pendingApprovals.addAll(workflowBUS.loadPendingApprovalItems(WarehouseSlipType.EXPORT));
+            pendingApprovals.addAll(workflowBUS.loadPendingApprovalItems(WarehouseSlipType.STOCKTAKE));
 
             revenueValueLabel.setText(formatMoneyCompact(revenue.summary().revenue()));
             revenueGrowthLabel.setText(formatGrowth(revenue.summary().growthPercent()));
             ordersValueLabel.setText(String.valueOf(revenue.summary().orders()));
             ordersHintLabel.setText("7 ngày gần nhất");
-            approvalValueLabel.setText(String.valueOf(approvals.size()));
+            approvalValueLabel.setText(String.valueOf(pendingApprovals.size()));
             approvalHintLabel.setText("Cần xử lý");
             stockWarningValueLabel.setText(String.valueOf(inventory.summary().lowStock() + inventory.summary().outOfStock()));
             stockWarningHintLabel.setText("Kiểm tra ngay");
@@ -100,19 +106,19 @@ public class BranchDashboardController {
             chartSubtitleLabel.setText("7 ngày gần nhất");
             bindChart(revenue.dailyRevenue());
 
-            pendingCountLabel.setText(String.valueOf(approvals.size()));
+            pendingCountLabel.setText(String.valueOf(pendingApprovals.size()));
             approvedCountLabel.setText("0");
             rejectedCountLabel.setText("0");
 
             activityTable.setItems(FXCollections.observableArrayList(
-                    approvals.stream()
+                    pendingApprovals.stream()
                             .sorted(Comparator.comparing(WarehouseApprovalItem::getCreatedAt).reversed())
                             .limit(8)
                             .map(item -> new ActivityRow(
                                     describeApproval(item),
                                     item.getCreatedBy(),
-                                    item.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM HH:mm")),
-                                    "Chờ duyệt"
+                                    item.getCreatedAt().format(TIME_FORMATTER),
+                                    WarehouseSlipStatus.toDisplay(item.getStatus())
                             ))
                             .toList()
             ));
@@ -138,8 +144,8 @@ public class BranchDashboardController {
         };
     }
 
-    private String formatMoneyCompact(java.math.BigDecimal value) {
-        java.math.BigDecimal million = value.divide(java.math.BigDecimal.valueOf(1_000_000), 1, java.math.RoundingMode.HALF_UP);
+    private String formatMoneyCompact(BigDecimal value) {
+        BigDecimal million = value.divide(BigDecimal.valueOf(1_000_000), 1, RoundingMode.HALF_UP);
         return million.stripTrailingZeros().toPlainString() + "M";
     }
 
@@ -149,8 +155,8 @@ public class BranchDashboardController {
 
     private static String statusStyle(String status) {
         return switch (status) {
-            case "Đang xử lý" -> "status-info";
-            case "Hoàn tất" -> "status-success";
+            case "Đã duyệt" -> "status-success";
+            case "Từ chối" -> "status-danger";
             default -> "status-warning";
         };
     }

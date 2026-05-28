@@ -204,26 +204,35 @@
     -fx-border-insets: 0;
     -fx-font-size: 13px;
     -fx-font-weight: 700;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
 }
 
 .filter-input,
 .filter-combo,
-.filter-date {
+.filter-date,
+.filter-input.text-field,
+.filter-combo.combo-box-base,
+.filter-date.date-picker {
     -fx-background-color: #ffffff;
     -fx-border-color: #dbe5f0;
     -fx-padding: 0 12px;
+    -fx-text-fill: #0f172a;
     -fx-prompt-text-fill: #94a3b8;
 }
 
-.filter-input {
-    -fx-text-fill: #0f172a;
+.filter-input:hover,
+.filter-combo:hover,
+.filter-date:hover {
+    -fx-border-color: #b9d8ff;
 }
 
 .filter-combo {
     -fx-cursor: hand;
 }
 
-.filter-combo .list-cell {
+.filter-combo .list-cell,
+.filter-combo > .list-cell {
     -fx-background-color: transparent;
     -fx-padding: 0 4px 0 0;
     -fx-text-fill: #0f172a;
@@ -231,6 +240,10 @@
     -fx-font-weight: 700;
     -fx-alignment: center-left;
     -fx-text-overrun: clip;
+}
+
+.filter-combo .text {
+    -fx-fill: #0f172a;
 }
 
 .filter-combo .combo-box-popup .list-view {
@@ -278,6 +291,10 @@
     -fx-prompt-text-fill: #94a3b8;
 }
 
+.filter-date > .text-field .text {
+    -fx-fill: #0f172a;
+}
+
 .filter-date > .arrow-button {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
@@ -291,6 +308,7 @@
 
 .filter-input:focused,
 .filter-combo:focused,
+.filter-combo:showing,
 .filter-date:focused {
     -fx-border-color: #8fc8ff;
     -fx-effect: dropshadow(gaussian, rgba(0, 122, 255, 0.12), 10, 0.18, 0, 3);
@@ -310,6 +328,11 @@
 .filter-apply-button:hover {
     -fx-background-color: linear-gradient(to bottom, #eef7ff, #dcedff);
     -fx-border-color: #82bfff;
+}
+
+.filter-apply-button:focused,
+.filter-apply-button:armed {
+    -fx-effect: none;
 }
 
 .period-badge {
@@ -518,6 +541,179 @@
 
 .action-reject-button:hover {
     -fx-background-color: #fecaca;
+}
+
+.director-content .button {
+    -fx-background-color: linear-gradient(to bottom, #ffffff, #f4f8ff);
+    -fx-background-radius: 12px;
+    -fx-border-color: #bfd8ff;
+    -fx-border-radius: 12px;
+    -fx-border-width: 1px;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-text-fill: #075eb8;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-padding: 0 16px;
+    -fx-pref-height: 40px;
+    -fx-min-height: 40px;
+    -fx-cursor: hand;
+    -fx-alignment: center;
+    -fx-content-display: center;
+    -fx-text-alignment: center;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.director-content .button .text {
+    -fx-fill: #075eb8;
+}
+
+.director-content .button:hover {
+    -fx-background-color: linear-gradient(to bottom, #eef7ff, #dcecff);
+    -fx-border-color: #7dbbff;
+    -fx-text-fill: #005bb5;
+}
+
+.director-content .button:hover .text {
+    -fx-fill: #005bb5;
+}
+
+.director-content .button:focused,
+.director-content .button:armed {
+    -fx-effect: none;
+}
+
+.director-content .primary-button,
+.director-content .primary-action-button,
+.director-content .filter-apply-button,
+.director-content .director-filter-apply,
+.director-content .revenue-filter-apply,
+.director-content .report-filter-apply,
+.director-content .branch-add-button,
+.director-content .product-add-button {
+    -fx-background-color: linear-gradient(to bottom, #1594ff, #007aff);
+    -fx-border-color: #006fe6;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(0, 122, 255, 0.18), 10, 0.18, 0, 3);
+}
+
+.director-content .primary-button .text,
+.director-content .primary-action-button .text,
+.director-content .filter-apply-button .text,
+.director-content .director-filter-apply .text,
+.director-content .revenue-filter-apply .text,
+.director-content .report-filter-apply .text,
+.director-content .branch-add-button .text,
+.director-content .product-add-button .text {
+    -fx-fill: #ffffff;
+}
+
+.director-content .primary-button:hover,
+.director-content .primary-action-button:hover,
+.director-content .filter-apply-button:hover,
+.director-content .director-filter-apply:hover,
+.director-content .revenue-filter-apply:hover,
+.director-content .report-filter-apply:hover,
+.director-content .branch-add-button:hover,
+.director-content .product-add-button:hover {
+    -fx-background-color: linear-gradient(to bottom, #31a4ff, #006ee6);
+    -fx-border-color: #005fcc;
+    -fx-text-fill: #ffffff;
+}
+
+.director-content .primary-button:hover .text,
+.director-content .primary-action-button:hover .text,
+.director-content .filter-apply-button:hover .text,
+.director-content .director-filter-apply:hover .text,
+.director-content .revenue-filter-apply:hover .text,
+.director-content .report-filter-apply:hover .text,
+.director-content .branch-add-button:hover .text,
+.director-content .product-add-button:hover .text {
+    -fx-fill: #ffffff;
+}
+
+.director-content .secondary-button,
+.director-content .secondary-action-button,
+.director-content .soft-outline-button,
+.director-content .revenue-filter-export {
+    -fx-background-color: linear-gradient(to bottom, #ffffff, #f4f9ff);
+    -fx-border-color: #b9d8ff;
+    -fx-text-fill: #075eb8;
+}
+
+.director-content .secondary-button .text,
+.director-content .secondary-action-button .text,
+.director-content .soft-outline-button .text,
+.director-content .revenue-filter-export .text {
+    -fx-fill: #075eb8;
+}
+
+.director-content .secondary-button:hover,
+.director-content .secondary-action-button:hover,
+.director-content .soft-outline-button:hover,
+.director-content .revenue-filter-export:hover {
+    -fx-background-color: linear-gradient(to bottom, #f7fbff, #e8f3ff);
+    -fx-border-color: #82bfff;
+    -fx-text-fill: #005bb5;
+}
+
+.director-content .period-tab {
+    -fx-pref-height: 38px;
+    -fx-min-height: 38px;
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #475569;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-effect: none;
+}
+
+.director-content .period-tab .text {
+    -fx-fill: #475569;
+}
+
+.director-content .period-tab:hover {
+    -fx-background-color: #eaf4ff;
+    -fx-border-color: transparent;
+    -fx-text-fill: #075eb8;
+}
+
+.director-content .period-tab.active,
+.director-content .period-tab-active {
+    -fx-background-color: linear-gradient(to bottom, #dcedff, #cfe8ff);
+    -fx-border-color: #9dcbff;
+    -fx-text-fill: #075eb8;
+}
+
+.director-content .period-tab.active .text,
+.director-content .period-tab-active .text {
+    -fx-fill: #075eb8;
+}
+
+.director-content .action-btn-view,
+.director-content .btn-view-bg {
+    -fx-background-color: #eaf4ff;
+    -fx-border-color: #b9d8ff;
+    -fx-text-fill: #075eb8;
+}
+
+.director-content .action-btn-edit {
+    -fx-background-color: #ecfdf5;
+    -fx-border-color: #bbf7d0;
+    -fx-text-fill: #047857;
+}
+
+.director-content .action-btn-pause {
+    -fx-background-color: #fff7ed;
+    -fx-border-color: #fed7aa;
+    -fx-text-fill: #c2410c;
+}
+
+.director-content .action-btn-resume {
+    -fx-background-color: #ecfdf5;
+    -fx-border-color: #bbf7d0;
+    -fx-text-fill: #047857;
 }
 
 .internal-tabs,
@@ -1151,6 +1347,16 @@
     -fx-cursor: hand;
 }
 
+.btn-secondary {
+    -fx-background-color: #eff6ff;
+    -fx-text-fill: #075eb8;
+    -fx-background-radius: 8px;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-padding: 6px 12px;
+    -fx-cursor: hand;
+}
+
 .report-page-root {
     -fx-padding: 24px 42px 34px 42px;
     -fx-spacing: 18px;
@@ -1204,6 +1410,30 @@
 .report-controls-row {
     -fx-spacing: 12px;
     -fx-alignment: center-left;
+}
+
+.report-filter-surface,
+.branch-filter-surface,
+.product-filter-surface,
+.product-action-surface {
+    -fx-background-color: linear-gradient(to bottom, #ffffff, #f8fbff);
+    -fx-border-color: #dbe5f0;
+    -fx-border-width: 1px;
+}
+
+.report-filter-surface {
+    -fx-padding: 14px 16px;
+    -fx-background-radius: 16px;
+    -fx-border-radius: 16px;
+}
+
+.report-filter-control {
+    -fx-pref-height: 42px;
+    -fx-min-height: 42px;
+}
+
+.report-filter-apply {
+    -fx-min-width: 118px;
 }
 
 .main-layout {
@@ -1373,17 +1603,27 @@
     -fx-spacing: 10px;
 }
 
+.product-filter-surface {
+    -fx-padding: 14px 16px;
+    -fx-background-radius: 14px;
+    -fx-border-radius: 14px;
+}
+
 .product-search-input {
     -fx-min-width: 260px;
     -fx-pref-height: 38px;
     -fx-background-radius: 12px;
     -fx-border-radius: 12px;
+    -fx-text-fill: #0f172a;
+    -fx-font-weight: 700;
 }
 
 .product-filter-button {
     -fx-min-width: 94px;
     -fx-pref-height: 38px;
     -fx-min-height: 38px;
+    -fx-background-radius: 14px;
+    -fx-border-radius: 14px;
 }
 
 .product-result-count {
@@ -1395,6 +1635,12 @@
 .product-toolbar-row {
     -fx-padding: 0 0 4px 0;
     -fx-spacing: 10px;
+}
+
+.product-action-surface {
+    -fx-padding: 12px 16px;
+    -fx-background-radius: 14px;
+    -fx-border-radius: 14px;
 }
 
 .product-toolbar-row .button {
@@ -1749,6 +1995,12 @@
 
 .branch-filter-card {
     -fx-spacing: 14px;
+}
+
+.branch-filter-surface {
+    -fx-padding: 18px 20px;
+    -fx-background-radius: 16px;
+    -fx-border-radius: 16px;
 }
 
 .branch-filter-row,
@@ -2221,52 +2473,102 @@
 .revenue-filter-row {
     -fx-spacing: 12px;
     -fx-alignment: center-left;
+    -fx-padding: 16px 18px;
+    -fx-background-radius: 16px;
+    -fx-border-radius: 16px;
 }
 
-.revenue-filter-combo,
-.revenue-filter-date {
-    -fx-background-color: #ffffff;
-    -fx-background-radius: 10px;
-    -fx-border-color: #e2e8f0;
-    -fx-border-radius: 10px;
+.director-filter-bar {
+    -fx-spacing: 10px;
+    -fx-padding: 14px 16px;
+    -fx-background-color: linear-gradient(to bottom, #ffffff, #f8fbff);
+    -fx-background-radius: 16px;
+    -fx-border-color: #dbe5f0;
+    -fx-border-radius: 16px;
     -fx-border-width: 1px;
-    -fx-font-size: 13px;
-    -fx-background-insets: 0;
-    -fx-border-insets: 0;
-    -fx-focus-color: transparent;
-    -fx-faint-focus-color: transparent;
 }
 
-.revenue-filter-combo:hover,
-.revenue-filter-date:hover {
-    -fx-background-color: #eaf4ff;
-    -fx-border-color: #add3ff;
+.director-filter-control {
+    -fx-pref-height: 44px;
+    -fx-min-height: 44px;
+    -fx-max-height: 44px;
 }
 
-.revenue-filter-combo:focused,
-.revenue-filter-date:focused,
-.revenue-filter-combo:showing {
-    -fx-background-color: #ffffff;
-    -fx-border-color: #e2e8f0;
-    -fx-effect: none;
+.director-filter-small {
+    -fx-pref-width: 104px;
 }
 
-.revenue-filter-combo:hover .list-cell,
-.revenue-filter-date:hover > .text-field {
-    -fx-text-fill: #075eb8;
+.director-filter-branch {
+    -fx-pref-width: 220px;
 }
 
-.revenue-filter-combo .list-cell {
-    -fx-background-color: transparent;
-    -fx-text-fill: #475569;
+.director-filter-apply {
+    -fx-pref-height: 44px;
+    -fx-min-height: 44px;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-background-color: linear-gradient(to bottom, #0f8cff, #007aff);
+    -fx-border-color: #0069db;
+    -fx-font-weight: 800;
+    -fx-text-fill: #ffffff;
 }
 
-.revenue-filter-date > .text-field,
-.revenue-filter-date > .arrow-button {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-border-color: transparent;
-    -fx-text-fill: #475569;
+.director-filter-apply:hover {
+    -fx-background-color: linear-gradient(to bottom, #22a0ff, #006ee6);
+    -fx-border-color: #005ec4;
+}
+
+.revenue-filter-bar-compact {
+    -fx-spacing: 8px;
+    -fx-padding: 12px 14px;
+    -fx-background-color: linear-gradient(to bottom, #ffffff, #f8fbff);
+    -fx-background-radius: 16px;
+    -fx-border-color: #dbe5f0;
+    -fx-border-radius: 16px;
+    -fx-border-width: 1px;
+}
+
+.revenue-filter-bar-compact .period-tabs {
+    -fx-padding: 4px;
+    -fx-spacing: 4px;
+}
+
+.revenue-filter-bar-compact .period-tab {
+    -fx-padding: 8px 14px;
+}
+
+.revenue-filter-bar-compact .revenue-report-button {
+    -fx-padding: 0 14px;
+}
+
+.revenue-filter-control {
+    -fx-pref-height: 42px;
+    -fx-min-height: 42px;
+    -fx-max-height: 42px;
+}
+
+.revenue-filter-mini {
+    -fx-pref-width: 88px;
+}
+
+.revenue-filter-branch {
+    -fx-pref-width: 184px;
+}
+
+.revenue-filter-apply,
+.revenue-filter-export {
+    -fx-min-width: 112px;
+}
+
+.revenue-filter-apply {
+    -fx-background-color: linear-gradient(to bottom, #0f8cff, #007aff);
+    -fx-border-color: #0069db;
+    -fx-text-fill: #ffffff;
+}
+
+.revenue-filter-apply:hover {
+    -fx-background-color: linear-gradient(to bottom, #22a0ff, #006ee6);
+    -fx-border-color: #005ec4;
 }
 
 .revenue-report-button {

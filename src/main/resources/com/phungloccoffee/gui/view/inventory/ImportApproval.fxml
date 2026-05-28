@@ -55,9 +55,11 @@
 
             <Label text="Ng&#xE0;y l&#x1EAD;p phi&#x1EBF;u:" styleClass="export-form-row-label" GridPane.columnIndex="0" GridPane.rowIndex="2" />
             <HBox alignment="CENTER_LEFT" spacing="14" GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.columnSpan="3">
-                <DatePicker prefWidth="190" promptText="nn/mm/yyyy" styleClass="export-input" />
+                <DatePicker fx:id="fromDatePicker" prefWidth="190" promptText="nn/mm/yyyy" styleClass="export-input" />
                 <Label text="&#x2192;" styleClass="export-range-separator" />
-                <DatePicker prefWidth="190" promptText="nn/mm/yyyy" styleClass="export-input" />
+                <DatePicker fx:id="toDatePicker" prefWidth="190" promptText="nn/mm/yyyy" styleClass="export-input" />
+                <Button text="Lọc ngày" onAction="#filterByDate" styleClass="secondary-button" />
+                <Button text="Xóa lọc" onAction="#resetDateFilter" styleClass="secondary-button" />
             </HBox>
         </GridPane>
 

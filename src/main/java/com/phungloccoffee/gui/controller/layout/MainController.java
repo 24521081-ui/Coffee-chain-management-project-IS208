@@ -2,6 +2,7 @@ package com.phungloccoffee.gui.controller.layout;
 
 import com.phungloccoffee.App;
 import com.phungloccoffee.gui.controller.common.PlaceholderPageController;
+import com.phungloccoffee.gui.model.AppRole;
 import com.phungloccoffee.gui.model.AppUserSession;
 import com.phungloccoffee.gui.model.MenuItemModel;
 import com.phungloccoffee.gui.service.ActionConfig;
@@ -11,6 +12,7 @@ import com.phungloccoffee.gui.service.SessionManager;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.application.Platform;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollPane;
@@ -33,9 +35,25 @@ public class MainController {
             Platform.runLater(this::returnToLogin);
             return;
         }
+        contentArea.sceneProperty().addListener((obs, oldScene, newScene) -> registerAsNavigationHost(newScene));
+        Platform.runLater(() -> registerAsNavigationHost(contentArea.getScene()));
         currentUser = SessionManager.getCurrentUser();
         setupLayout();
         loadDefaultPageByRole();
+    }
+
+    private void registerAsNavigationHost(Scene scene) {
+        if (scene != null && scene.getRoot() != null) {
+            scene.getRoot().setUserData(this);
+        }
+    }
+
+    public static MainController from(Node node) {
+        if (node == null || node.getScene() == null || node.getScene().getRoot() == null) {
+            return null;
+        }
+        Object userData = node.getScene().getRoot().getUserData();
+        return userData instanceof MainController controller ? controller : null;
     }
 
     private void setupLayout() {
@@ -88,6 +106,9 @@ public class MainController {
     }
 
     private Parent prepareContentPage(MenuItemModel item, Parent page) {
+        if (currentUser != null && currentUser.getRole() == AppRole.BAN_GIAM_DOC) {
+            addStyleClass(page, "director-content");
+        }
         if (!shouldUseMainScroll(item.getId()) || page instanceof ScrollPane) {
             return page;
         }

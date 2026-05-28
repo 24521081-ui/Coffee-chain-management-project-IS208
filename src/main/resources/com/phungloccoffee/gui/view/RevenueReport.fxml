@@ -18,7 +18,7 @@
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.phungloccoffee.gui.controller.report.RevenueReportController"
       styleClass="page-root revenue-report-root">
-    <HBox styleClass="filter-card report-controls-row revenue-filter-row">
+    <HBox styleClass="filter-card report-controls-row revenue-filter-bar-compact">
         <HBox styleClass="period-tabs">
             <Button fx:id="dayPeriodButton" text="Ngày" onAction="#selectDayPeriod" styleClass="period-tab" />
             <Button fx:id="monthPeriodButton" text="Tháng" onAction="#selectMonthPeriod" styleClass="period-tab" />
@@ -26,14 +26,14 @@
             <Button fx:id="yearPeriodButton" text="Năm" onAction="#selectYearPeriod" styleClass="period-tab" />
         </HBox>
         <Region HBox.hgrow="ALWAYS" />
-        <ComboBox fx:id="branchFilterComboBox" prefWidth="210" styleClass="page-combo revenue-filter-combo" />
-        <ComboBox fx:id="monthComboBox" promptText="Tháng" prefWidth="95" styleClass="page-combo revenue-filter-combo" />
-        <ComboBox fx:id="quarterComboBox" promptText="Quý" prefWidth="85" styleClass="page-combo revenue-filter-combo" />
-        <ComboBox fx:id="yearComboBox" promptText="Năm" prefWidth="95" styleClass="page-combo revenue-filter-combo" />
-        <DatePicker fx:id="fromDatePicker" prefWidth="150" promptText="Từ ngày" styleClass="page-date revenue-filter-date" />
-        <DatePicker fx:id="toDatePicker" prefWidth="150" promptText="Đến ngày" styleClass="page-date revenue-filter-date" />
-        <Button text="Xem báo cáo" onAction="#loadReport" styleClass="primary-button revenue-report-button" />
-        <Button text="Xuất báo cáo" onAction="#exportReport" styleClass="secondary-button revenue-report-button" />
+        <ComboBox fx:id="branchFilterComboBox" prefWidth="184" styleClass="filter-combo revenue-filter-control revenue-filter-branch" />
+        <ComboBox fx:id="monthComboBox" promptText="Tháng" prefWidth="86" styleClass="filter-combo revenue-filter-control revenue-filter-mini" />
+        <ComboBox fx:id="quarterComboBox" promptText="Quý" prefWidth="82" styleClass="filter-combo revenue-filter-control revenue-filter-mini" />
+        <ComboBox fx:id="yearComboBox" promptText="Năm" prefWidth="90" styleClass="filter-combo revenue-filter-control revenue-filter-mini" />
+        <DatePicker fx:id="fromDatePicker" prefWidth="140" promptText="Từ ngày" styleClass="filter-date revenue-filter-control" />
+        <DatePicker fx:id="toDatePicker" prefWidth="140" promptText="Đến ngày" styleClass="filter-date revenue-filter-control" />
+        <Button text="Xem báo cáo" onAction="#loadReport" styleClass="filter-apply-button revenue-filter-apply" />
+        <Button text="Xuất báo cáo" onAction="#exportReport" styleClass="secondary-action-button revenue-filter-export" />
     </HBox>
 
     <HBox styleClass="kpi-row">

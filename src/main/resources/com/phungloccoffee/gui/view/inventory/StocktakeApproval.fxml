@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
@@ -15,9 +17,13 @@
         <HBox alignment="CENTER_LEFT" spacing="12">
             <VBox spacing="4">
                 <Label text="Duyệt phiếu kiểm kê kho" styleClass="section-title" />
-                <Label text="Quản lý chi nhánh xem chi tiết, duyệt hoặc từ chối các phiếu kiểm kê đang chờ duyệt." styleClass="section-subtitle" />
+                <Label text="Quản lý chi nhánh xem chi tiết, duyệt hoặc từ chối các phiếu kiểm kê theo dữ liệu thật." styleClass="section-subtitle" />
             </VBox>
             <Region HBox.hgrow="ALWAYS" />
+            <DatePicker fx:id="fromDatePicker" promptText="Từ ngày" />
+            <DatePicker fx:id="toDatePicker" promptText="Đến ngày" />
+            <Button text="Lọc ngày" onAction="#filterByDate" styleClass="secondary-button" />
+            <Button text="Xóa lọc" onAction="#resetDateFilter" styleClass="secondary-button" />
         </HBox>
         <TableView fx:id="stocktakeTable" prefHeight="520" VBox.vgrow="ALWAYS" styleClass="page-table">
             <columns>

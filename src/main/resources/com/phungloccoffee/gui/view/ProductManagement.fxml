@@ -20,14 +20,14 @@
             <Button fx:id="addProductButton" onAction="#showAddProductDialog" styleClass="primary-action-button product-add-button" text="+ Thêm sản phẩm" />
         </HBox>
 
-        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="product-search-bar">
-            <TextField fx:id="searchField" maxWidth="480" prefWidth="390" promptText="Tìm kiếm sản phẩm theo mã hoặc tên" styleClass="page-input product-search-input" HBox.hgrow="SOMETIMES" />
-            <Button onAction="#applySearchFilter" styleClass="secondary-action-button product-filter-button" text="Tìm kiếm" />
+        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="product-search-bar product-filter-surface">
+            <TextField fx:id="searchField" maxWidth="480" prefWidth="390" promptText="Tìm kiếm sản phẩm theo mã hoặc tên" styleClass="filter-input product-search-input" HBox.hgrow="SOMETIMES" />
+            <Button onAction="#applySearchFilter" styleClass="filter-apply-button product-filter-button" text="Tìm kiếm" />
             <Button onAction="#clearFilter" styleClass="secondary-action-button product-filter-button" text="Xóa lọc" />
             <Region HBox.hgrow="ALWAYS" />
         </HBox>
 
-        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="product-toolbar-row">
+        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="product-toolbar-row product-action-surface">
             <Label fx:id="resultCountLabel" styleClass="product-result-count" text="Hiển thị 0/0 sản phẩm" />
             <Region HBox.hgrow="ALWAYS" />
             <HBox alignment="CENTER" spacing="8" styleClass="product-action-group">

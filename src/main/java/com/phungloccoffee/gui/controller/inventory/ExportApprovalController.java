@@ -17,6 +17,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -26,6 +27,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -42,9 +44,12 @@ public class ExportApprovalController {
     @FXML private TableColumn<ExportRequestRow, Void> actionColumn;
     @FXML private StackPane approvalTabIconContainer;
     @FXML private StackPane detailTabIconContainer;
+    @FXML private DatePicker fromDatePicker;
+    @FXML private DatePicker toDatePicker;
 
     private final WarehouseWorkflowBUS workflowBUS = new WarehouseWorkflowBUS();
     private final ObservableList<ExportRequestRow> rows = FXCollections.observableArrayList();
+    private final ObservableList<ExportRequestRow> allRows = FXCollections.observableArrayList();
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @FXML
@@ -75,19 +80,47 @@ public class ExportApprovalController {
 
     private void loadRows() {
         try {
-            List<WarehouseApprovalItem> items = workflowBUS.loadApprovalItems(WarehouseSlipType.EXPORT, null);
-            rows.setAll(items.stream().map(item -> new ExportRequestRow(
+            List<WarehouseApprovalItem> items = workflowBUS.loadApprovalHistory(WarehouseSlipType.EXPORT);
+            allRows.setAll(items.stream().map(item -> new ExportRequestRow(
                     item.getSlipId(),
                     item.getCreatedBy(),
+                    item.getCreatedAt().toLocalDate(),
                     item.getCreatedAt().format(formatter),
                     item.getRelatedParty(),
                     item.getItemCount(),
                     "-",
                     WarehouseSlipStatus.toDisplay(item.getStatus())
             )).toList());
+            applyDateFilter();
         } catch (Exception e) {
+            allRows.clear();
             rows.clear();
         }
+    }
+
+    @FXML
+    private void filterByDate() {
+        applyDateFilter();
+    }
+
+    @FXML
+    private void resetDateFilter() {
+        if (fromDatePicker != null) {
+            fromDatePicker.setValue(null);
+        }
+        if (toDatePicker != null) {
+            toDatePicker.setValue(null);
+        }
+        applyDateFilter();
+    }
+
+    private void applyDateFilter() {
+        LocalDate from = fromDatePicker == null ? null : fromDatePicker.getValue();
+        LocalDate to = toDatePicker == null ? null : toDatePicker.getValue();
+        rows.setAll(allRows.stream()
+                .filter(row -> (from == null || !row.getCreatedDate().isBefore(from))
+                        && (to == null || !row.getCreatedDate().isAfter(to)))
+                .toList());
     }
 
     private void approve(ExportRequestRow row) {
@@ -253,16 +286,18 @@ public class ExportApprovalController {
     public static class ExportRequestRow {
         private final SimpleStringProperty code;
         private final SimpleStringProperty employeeId;
+        private final LocalDate createdDate;
         private final SimpleStringProperty time;
         private final SimpleStringProperty reason;
         private final SimpleIntegerProperty itemCount;
         private final SimpleStringProperty total;
         private final SimpleStringProperty status;
 
-        public ExportRequestRow(String code, String employeeId, String time, String reason,
+        public ExportRequestRow(String code, String employeeId, LocalDate createdDate, String time, String reason,
                                 int itemCount, String total, String status) {
             this.code = new SimpleStringProperty(code);
             this.employeeId = new SimpleStringProperty(employeeId);
+            this.createdDate = createdDate;
             this.time = new SimpleStringProperty(time);
             this.reason = new SimpleStringProperty(reason);
             this.itemCount = new SimpleIntegerProperty(itemCount);
@@ -279,6 +314,7 @@ public class ExportApprovalController {
         public SimpleStringProperty statusProperty() { return status; }
         public String getCode() { return code.get(); }
         public String getEmployeeId() { return employeeId.get(); }
+        public LocalDate getCreatedDate() { return createdDate; }
         public String getTime() { return time.get(); }
         public String getReason() { return reason.get(); }
         public int getItemCount() { return itemCount.get(); }
