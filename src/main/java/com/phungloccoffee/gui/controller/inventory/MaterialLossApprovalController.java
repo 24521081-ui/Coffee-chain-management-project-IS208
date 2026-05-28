@@ -3,6 +3,7 @@ package com.phungloccoffee.gui.controller.inventory;
 import com.phungloccoffee.bus.MaterialLossBUS;
 import com.phungloccoffee.exception.DatabaseException;
 import com.phungloccoffee.exception.PermissionException;
+import com.phungloccoffee.exception.ValidationException;
 import com.phungloccoffee.gui.util.IconFactory;
 import com.phungloccoffee.model.MaterialLossRecord;
 import com.phungloccoffee.util.AlertUtils;
@@ -17,14 +18,20 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 public class MaterialLossApprovalController {
-    private static final String STATUS_RECORDED = "Đã ghi nhận";
+    private static final String STATUS_PENDING = "Chờ duyệt";
+    private static final String STATUS_APPROVED = "Đã duyệt";
+    private static final String STATUS_REJECTED = "Từ chối";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @FXML private TableView<Row> lossTable;
@@ -55,8 +62,8 @@ public class MaterialLossApprovalController {
         dateColumn.setCellValueFactory(data -> data.getValue().dateProperty());
         statusColumn.setCellValueFactory(data -> data.getValue().statusProperty());
 
-        codeColumn.setCellFactory(column -> new CodeCell());
-        creatorColumn.setCellFactory(column -> new CreatorCell());
+        codeColumn.setCellFactory(column -> new LabelCell<>("cell-code"));
+        creatorColumn.setCellFactory(column -> new LabelCell<>("cell-nv"));
         materialColumn.setCellFactory(column -> new WrapTextCell<>(180));
         quantityColumn.setCellFactory(column -> new QuantityCell());
         reasonColumn.setCellFactory(column -> new WrapTextCell<>(240));
@@ -77,47 +84,74 @@ public class MaterialLossApprovalController {
         }
     }
 
+    private void approve(Row row) {
+        try {
+            materialLossBUS.approveLoss(row.getCode());
+            AlertUtils.showInfo("Đã duyệt hao hụt và cập nhật tồn kho.");
+            loadRows();
+        } catch (ValidationException | PermissionException | DatabaseException e) {
+            AlertUtils.showError(e.getMessage());
+        }
+    }
+
+    private void reject(Row row) {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Từ chối hao hụt");
+        dialog.setHeaderText("Nhập lý do từ chối cho " + row.getCode());
+        Optional<String> result = dialog.showAndWait();
+        if (result.isEmpty() || result.get().isBlank()) {
+            AlertUtils.showWarning("Bắt buộc nhập lý do từ chối.");
+            return;
+        }
+        try {
+            materialLossBUS.rejectLoss(row.getCode(), result.get());
+            AlertUtils.showInfo("Đã từ chối phiếu hao hụt.");
+            loadRows();
+        } catch (ValidationException | PermissionException | DatabaseException e) {
+            AlertUtils.showError(e.getMessage());
+        }
+    }
+
     private void showDetails(Row row) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Chi tiết hao hụt nguyên liệu");
         alert.setHeaderText(row.getCode() + " - " + row.getStatus());
         alert.setContentText("Nguồn dữ liệu: Cơ sở dữ liệu thật"
+                + "\nNgười lập: " + row.getCreator()
                 + "\nNguyên liệu: " + row.getMaterial()
                 + "\nSố lượng: " + row.getQuantity()
                 + "\nLý do: " + row.getReason()
                 + "\nNgày ghi nhận: " + row.getDate()
-                + "\n\nLưu ý: Schema hao hụt hiện tại chưa có trạng thái phê duyệt riêng, nên màn này đang phục vụ tra cứu và đối chiếu.");
+                + "\nTrạng thái: " + row.getStatus());
         alert.showAndWait();
     }
 
-    private class CodeCell extends TableCell<Row, String> {
-        @Override
-        protected void updateItem(String code, boolean empty) {
-            super.updateItem(code, empty);
-            if (empty || code == null) {
-                setGraphic(null);
-                setText(null);
-                return;
-            }
-            Label label = new Label(code);
-            label.getStyleClass().add("cell-code");
-            setGraphic(label);
-            setText(null);
-            setAlignment(Pos.CENTER);
-        }
+    private static String statusStyle(String status) {
+        return switch (status) {
+            case STATUS_APPROVED -> "badge-approved";
+            case STATUS_REJECTED -> "badge-rejected";
+            default -> "badge-pending";
+        };
     }
 
-    private class CreatorCell extends TableCell<Row, String> {
+    private class LabelCell<T> extends TableCell<Row, T> {
+        private final String styleClass;
+
+        private LabelCell(String styleClass) {
+            this.styleClass = styleClass;
+        }
+
         @Override
-        protected void updateItem(String creator, boolean empty) {
-            super.updateItem(creator, empty);
-            if (empty || creator == null) {
+        protected void updateItem(T value, boolean empty) {
+            super.updateItem(value, empty);
+            if (empty || value == null) {
                 setGraphic(null);
                 setText(null);
                 return;
             }
-            Label label = new Label(creator);
-            label.getStyleClass().add("cell-nv");
+            Label label = new Label(String.valueOf(value));
+            label.getStyleClass().add(styleClass);
+            label.setWrapText(true);
             setGraphic(label);
             setText(null);
             setAlignment(Pos.CENTER);
@@ -176,7 +210,7 @@ public class MaterialLossApprovalController {
                 return;
             }
             Label badge = new Label(status);
-            badge.getStyleClass().addAll("badge", "badge-approved");
+            badge.getStyleClass().addAll("badge", statusStyle(status));
             setGraphic(badge);
             setText(null);
             setAlignment(Pos.CENTER);
@@ -196,9 +230,23 @@ public class MaterialLossApprovalController {
             VBox actionStack = new VBox(6);
             actionStack.setAlignment(Pos.CENTER);
             Button detail = new Button("Xem");
-            detail.getStyleClass().add("btn-view-bg");
             detail.setOnAction(event -> showDetails(row));
-            actionStack.getChildren().add(detail);
+
+            if (STATUS_PENDING.equals(row.getStatus())) {
+                detail.getStyleClass().add("btn-text-blue");
+                Button approve = new Button("Duyệt");
+                approve.getStyleClass().add("btn-approve");
+                approve.setOnAction(event -> approve(row));
+                Button reject = new Button("Từ chối");
+                reject.getStyleClass().add("btn-reject");
+                reject.setOnAction(event -> reject(row));
+                HBox actionRow = new HBox(6, approve, reject);
+                actionRow.setAlignment(Pos.CENTER);
+                actionStack.getChildren().addAll(detail, actionRow);
+            } else {
+                detail.getStyleClass().add("btn-view-bg");
+                actionStack.getChildren().add(detail);
+            }
             setGraphic(actionStack);
             setText(null);
             setAlignment(Pos.CENTER);
@@ -213,8 +261,10 @@ public class MaterialLossApprovalController {
         private final SimpleStringProperty reason;
         private final SimpleStringProperty date;
         private final SimpleStringProperty status;
+        private final LocalDate createdDate;
 
-        public Row(String code, String creator, String material, String quantity, String reason, String date, String status) {
+        public Row(String code, String creator, String material, String quantity, String reason, String date, String status,
+                   LocalDate createdDate) {
             this.code = new SimpleStringProperty(code);
             this.creator = new SimpleStringProperty(creator);
             this.material = new SimpleStringProperty(material);
@@ -222,19 +272,29 @@ public class MaterialLossApprovalController {
             this.reason = new SimpleStringProperty(reason);
             this.date = new SimpleStringProperty(date);
             this.status = new SimpleStringProperty(status);
+            this.createdDate = createdDate;
         }
 
         public static Row from(MaterialLossRecord record) {
             BigDecimal quantity = record.getQuantity() == null ? BigDecimal.ZERO : record.getQuantity().stripTrailingZeros();
             return new Row(
                     record.getLossId(),
-                    "N/A",
+                    record.getEmployeeId() == null || record.getEmployeeId().isBlank() ? "N/A" : record.getEmployeeId(),
                     record.getMaterialId() + " - " + record.getMaterialName(),
                     quantity.toPlainString() + " " + (record.getUnit() == null ? "" : record.getUnit()),
                     record.getReason(),
                     record.getCreatedAt() == null ? "" : DATE_FORMATTER.format(record.getCreatedAt()),
-                    STATUS_RECORDED
+                    toDisplayStatus(record.getStatus()),
+                    record.getCreatedAt() == null ? null : record.getCreatedAt().toLocalDate()
             );
+        }
+
+        private static String toDisplayStatus(String status) {
+            return switch (status) {
+                case "DA_DUYET" -> STATUS_APPROVED;
+                case "TU_CHOI" -> STATUS_REJECTED;
+                default -> STATUS_PENDING;
+            };
         }
 
         public SimpleStringProperty codeProperty() { return code; }
@@ -251,5 +311,6 @@ public class MaterialLossApprovalController {
         public String getDate() { return date.get(); }
         public String getStatus() { return status.get(); }
         public String getCreator() { return creator.get(); }
+        public LocalDate getCreatedDate() { return createdDate; }
     }
 }

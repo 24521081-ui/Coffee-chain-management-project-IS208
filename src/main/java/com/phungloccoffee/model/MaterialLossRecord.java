@@ -5,12 +5,15 @@ import java.time.LocalDateTime;
 
 public class MaterialLossRecord {
     private String lossId;
+    private String warehouseId;
+    private String employeeId;
     private String materialId;
     private String materialName;
     private String unit;
     private BigDecimal quantity;
     private String reason;
     private String note;
+    private String status;
     private LocalDateTime createdAt;
 
     public String getLossId() {
@@ -19,6 +22,22 @@ public class MaterialLossRecord {
 
     public void setLossId(String lossId) {
         this.lossId = lossId;
+    }
+
+    public String getWarehouseId() {
+        return warehouseId;
+    }
+
+    public void setWarehouseId(String warehouseId) {
+        this.warehouseId = warehouseId;
+    }
+
+    public String getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(String employeeId) {
+        this.employeeId = employeeId;
     }
 
     public String getMaterialId() {
@@ -67,6 +86,14 @@ public class MaterialLossRecord {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public LocalDateTime getCreatedAt() {
