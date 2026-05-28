@@ -1,9 +1,5 @@
 package com.phungloccoffee.dao;
 
-import com.phungloccoffee.exception.DatabaseException;
-import com.phungloccoffee.model.MaterialLossRecord;
-import com.phungloccoffee.util.DBConnection;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,6 +11,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import com.phungloccoffee.exception.DatabaseException;
+import com.phungloccoffee.model.MaterialLossRecord;
+import com.phungloccoffee.util.DBConnection;
 
 public class MaterialLossDAO {
     private static final String STATUS_PENDING = "CHO_DUYET";
