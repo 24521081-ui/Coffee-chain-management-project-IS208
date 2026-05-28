@@ -35,7 +35,7 @@
     <VBox styleClass="table-card" VBox.vgrow="ALWAYS">
         <VBox spacing="4">
             <Label text="Danh sách khách hàng" styleClass="section-title" />
-            <Label text="Tra cứu thông tin liên hệ, hạng thành viên và điểm tích lũy" styleClass="section-subtitle" />
+            <Label text="Tra cứu thông tin liên hệ và hạng thành viên" styleClass="section-subtitle" />
         </VBox>
         <TableView fx:id="customerTable" prefHeight="520" VBox.vgrow="ALWAYS" styleClass="page-table">
             <columns>
@@ -51,9 +51,9 @@
         <HBox alignment="CENTER_RIGHT" spacing="12" styleClass="report-controls-row">
             <Label fx:id="resultCountLabel" text="Tổng 0 khách hàng" styleClass="section-subtitle" />
             <Region HBox.hgrow="ALWAYS" />
-            <Button fx:id="previousPageButton" text="Previous Page" onAction="#handlePreviousPage" styleClass="secondary-button" />
+            <Button fx:id="previousPageButton" text="Trang trước" onAction="#handlePreviousPage" styleClass="secondary-button" />
             <Label fx:id="pageInfoLabel" text="Trang 1 / 1" styleClass="section-subtitle" />
-            <Button fx:id="nextPageButton" text="Next Page" onAction="#handleNextPage" styleClass="primary-button" />
+            <Button fx:id="nextPageButton" text="Trang sau" onAction="#handleNextPage" styleClass="primary-button" />
         </HBox>
     </VBox>
 </VBox>

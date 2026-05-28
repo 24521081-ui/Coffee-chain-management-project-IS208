@@ -32,22 +32,22 @@
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-blue">
             <Label text="Tổng sản phẩm theo dõi" styleClass="kpi-label" />
             <Label fx:id="trackedValue" text="0" styleClass="kpi-value" />
-            <Label text="Toàn hệ thống" styleClass="kpi-badge-neutral" />
+            <Label text="Theo filter hiện tại" styleClass="kpi-badge-neutral" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-orange">
             <Label text="Chi nhánh có cảnh báo" styleClass="kpi-label" />
             <Label fx:id="lowStockValue" text="0" styleClass="kpi-value" />
-            <Label text="Cần kiểm tra" styleClass="kpi-badge-warning" />
+            <Label text="Có tồn dưới ngưỡng" styleClass="kpi-badge-warning" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-red">
             <Label text="Mặt hàng tồn thấp" styleClass="kpi-label" />
             <Label fx:id="outOfStockValue" text="0" styleClass="kpi-value" />
-            <Label text="Ưu tiên xử lý" styleClass="kpi-badge-danger" />
+            <Label text="Theo ngưỡng tồn kho" styleClass="kpi-badge-danger" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" styleClass="kpi-card kpi-card-green">
             <Label text="Giá trị tồn kho" styleClass="kpi-label" />
             <Label fx:id="inventoryValue" text="0M" styleClass="kpi-value" />
-            <Label text="+3%" styleClass="kpi-badge-up" />
+            <Label fx:id="inventoryGrowthBadge" text="0%" styleClass="kpi-badge-neutral" />
         </VBox>
     </HBox>
 
@@ -55,7 +55,7 @@
         <VBox HBox.hgrow="ALWAYS" styleClass="chart-card chart-card-large">
             <VBox spacing="4">
                 <Label text="Cảnh báo tồn kho theo chi nhánh" styleClass="section-title" />
-                <Label text="Số mặt hàng dưới ngưỡng hoặc hết hàng" styleClass="section-subtitle" />
+                <Label text="Trục X là chi nhánh, trục Y là số cảnh báo" styleClass="section-subtitle" />
             </VBox>
             <BarChart fx:id="branchWarningChart" animated="false" legendVisible="false" prefHeight="300" styleClass="report-chart">
                 <xAxis>
@@ -69,7 +69,7 @@
 
         <VBox prefWidth="360" styleClass="info-card" spacing="14">
             <VBox spacing="4">
-                <Label text="Cơ cấu tồn kho theo nhóm" styleClass="section-title" />
+                <Label fx:id="categoryChartTitleLabel" text="Cơ cấu tồn kho theo nhóm" styleClass="section-title" />
                 <Label text="Tỷ trọng giá trị tồn kho" styleClass="section-subtitle" />
             </VBox>
             <PieChart fx:id="categoryPieChart" prefHeight="210" legendVisible="true" />
@@ -95,7 +95,7 @@
 
     <VBox styleClass="table-card" VBox.vgrow="ALWAYS">
         <VBox spacing="4">
-                <Label text="Bảng tồn kho nguyên liệu" styleClass="section-title" />
+            <Label text="Bảng tồn kho nguyên liệu" styleClass="section-title" />
             <Label text="Nguyên liệu, chi nhánh, số tồn, ngưỡng an toàn và giá trị tồn" styleClass="section-subtitle" />
         </VBox>
         <TableView fx:id="inventoryTable" prefHeight="320" VBox.vgrow="ALWAYS" styleClass="page-table">

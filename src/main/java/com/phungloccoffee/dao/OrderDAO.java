@@ -27,9 +27,14 @@ public class OrderDAO {
             conn.setAutoCommit(false);
             insert(conn, order);
             ChiTietDonHangDAO detailDAO = new ChiTietDonHangDAO();
+            OrderDetailToppingDAO toppingDAO = new OrderDetailToppingDAO();
             for (OrderDetail detail : details) {
                 detail.setDonHangId(order.getDonHangId());
                 detailDAO.insert(conn, detail);
+                for (var topping : detail.getToppings()) {
+                    topping.setOrderDetailId(detail.getChiTietDonHangId());
+                    toppingDAO.insert(conn, topping);
+                }
             }
             conn.commit();
         } catch (Exception e) {
@@ -64,9 +69,14 @@ public class OrderDAO {
 
             insert(conn, order);
             ChiTietDonHangDAO detailDAO = new ChiTietDonHangDAO();
+            OrderDetailToppingDAO toppingDAO = new OrderDetailToppingDAO();
             for (OrderDetail detail : details) {
                 detail.setDonHangId(order.getDonHangId());
                 detailDAO.insert(conn, detail);
+                for (var topping : detail.getToppings()) {
+                    topping.setOrderDetailId(detail.getChiTietDonHangId());
+                    toppingDAO.insert(conn, topping);
+                }
             }
             if (deductInventory) {
                 deductInventoryForPayment(conn, order, details);
@@ -135,19 +145,8 @@ public class OrderDAO {
             conn = DBConnection.getConnection();
             conn.setAutoCommit(false);
 
-            Order order = findOrderByIdForUpdate(conn, donHangId)
-                    .orElseThrow(() -> new ValidationException("Không tìm thấy đơn hàng: " + donHangId));
-            if (PAID_STATUS.equals(order.getTrangThaiThanhToan())) {
-                throw new ValidationException("Đơn hàng này đã được thanh toán");
-            }
-
-            List<OrderDetail> details = new ChiTietDonHangDAO().findByDonHangId(conn, donHangId);
-            deductInventoryForPayment(conn, order, details);
-            completePaidOrder(conn, donHangId);
+            Order order = confirmPayment(conn, donHangId);
             conn.commit();
-
-            order.setTrangThai(COMPLETED_STATUS);
-            order.setTrangThaiThanhToan(PAID_STATUS);
             return order;
         } catch (ValidationException e) {
             rollbackQuietly(conn);
@@ -161,6 +160,44 @@ public class OrderDAO {
         } finally {
             closeQuietly(conn);
         }
+    }
+
+    public Order confirmPayment(Connection conn, String donHangId) throws DatabaseException, ValidationException {
+        Order order = findOrderByIdForUpdate(conn, donHangId)
+                .orElseThrow(() -> new ValidationException("Không tìm thấy đơn hàng: " + donHangId));
+        if (PAID_STATUS.equals(order.getTrangThaiThanhToan())) {
+            throw new ValidationException("Đơn hàng này đã được thanh toán");
+        }
+
+        List<OrderDetail> details = new ChiTietDonHangDAO().findByDonHangId(conn, donHangId);
+        deductInventoryForPayment(conn, order, details);
+        completePaidOrder(conn, donHangId);
+
+        order.setTrangThai(COMPLETED_STATUS);
+        order.setTrangThaiThanhToan(PAID_STATUS);
+        return order;
+    }
+
+    public Order confirmPaymentAndAssignCustomer(Connection conn, String donHangId, String khachHangId)
+            throws DatabaseException, ValidationException {
+        Order order = findOrderByIdForUpdate(conn, donHangId)
+                .orElseThrow(() -> new ValidationException("Không tìm thấy đơn hàng: " + donHangId));
+        if (PAID_STATUS.equals(order.getTrangThaiThanhToan())) {
+            throw new ValidationException("Đơn hàng này đã được thanh toán");
+        }
+        if (order.getKhachHangId() != null && !order.getKhachHangId().isBlank()
+                && !order.getKhachHangId().equals(khachHangId)) {
+            throw new ValidationException("Đơn hàng này đã có khách hàng.");
+        }
+
+        List<OrderDetail> details = new ChiTietDonHangDAO().findByDonHangId(conn, donHangId);
+        deductInventoryForPayment(conn, order, details);
+        completePaidOrder(conn, donHangId, khachHangId);
+
+        order.setKhachHangId(khachHangId);
+        order.setTrangThai(COMPLETED_STATUS);
+        order.setTrangThaiThanhToan(PAID_STATUS);
+        return order;
     }
 
     private void deductInventoryForPayment(Connection conn, Order order, List<OrderDetail> details) throws DatabaseException {
@@ -278,6 +315,26 @@ public class OrderDAO {
             }
         } catch (SQLException e) {
             throw new DatabaseException("Khong the cap nhat don hang da hoan thanh: " + e.getMessage(), e);
+        }
+    }
+
+    private void completePaidOrder(Connection conn, String donHangId, String khachHangId) throws DatabaseException {
+        String sql = """
+                UPDATE don_hang
+                SET khach_hang_id = ?, trang_thai = ?, trang_thai_thanh_toan = ?, updated_at = SYSTIMESTAMP
+                WHERE don_hang_id = ?
+                """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, khachHangId);
+            stmt.setString(2, COMPLETED_STATUS);
+            stmt.setString(3, PAID_STATUS);
+            stmt.setString(4, donHangId);
+            int updated = stmt.executeUpdate();
+            if (updated == 0) {
+                throw new DatabaseException("Khong tim thay don hang de hoan thanh: " + donHangId);
+            }
+        } catch (SQLException e) {
+            throw new DatabaseException("Khong the cap nhat khach hang cho don hang: " + e.getMessage(), e);
         }
     }
 

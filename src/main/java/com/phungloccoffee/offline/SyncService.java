@@ -76,7 +76,7 @@ public class SyncService {
         List<OrderDetail> details = new ArrayList<>();
         int index = 1;
         for (OfflineOrderDetail detail : offlineOrder.getDetails()) {
-            details.add(new OrderDetail(
+            OrderDetail orderDetail = new OrderDetail(
                     generateDetailId(offlineOrder.getLocalOrderId(), index++, detail.getProductId()),
                     serverOrderId,
                     detail.getProductId(),
@@ -86,7 +86,9 @@ public class SyncService {
                     detail.getNote(),
                     null,
                     null
-            ));
+            );
+            orderDetail.setToppings(detail.getToppings());
+            details.add(orderDetail);
         }
 
         boolean deductInventory = "DA_THANH_TOAN".equals(offlineOrder.getPaymentStatus());

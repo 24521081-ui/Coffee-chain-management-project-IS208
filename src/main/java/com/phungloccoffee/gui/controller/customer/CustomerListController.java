@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CustomerListController {
-    private static final String ALL_RANKS = "Tất cả hạng";
+    private static final String ALL_RANKS = "T\u1ea5t c\u1ea3 h\u1ea1ng";
     private static final int DEFAULT_PAGE_SIZE = 10;
 
     @FXML private TextField searchField;
@@ -166,28 +166,28 @@ public class CustomerListController {
 
     private void handleViewCustomer(KhachHang customer) {
         if (customer == null) {
-            AlertUtils.showWarning("Vui lòng chọn khách hàng cần xem.");
+            AlertUtils.showWarning("Vui l\u00f2ng ch\u1ecdn kh\u00e1ch h\u00e0ng c\u1ea7n xem.");
             return;
         }
-        AlertUtils.showInfo("Khách hàng: " + customer.getHoTen()
-                + "\nMã KH: " + customer.getKhachHangId()
-                + "\nĐiện thoại: " + nullToEmpty(customer.getPhone())
+        AlertUtils.showInfo("Kh\u00e1ch h\u00e0ng: " + customer.getHoTen()
+                + "\nM\u00e3 KH: " + customer.getKhachHangId()
+                + "\n\u0110i\u1ec7n tho\u1ea1i: " + nullToEmpty(customer.getPhone())
                 + "\nEmail: " + nullToEmpty(customer.getEmail())
-                + "\nHạng: " + nullToEmpty(customer.getHangThanhVien())
-                + "\nĐiểm: " + customer.getDiemTichLuy());
+                + "\nH\u1ea1ng: " + nullToEmpty(customer.getHangThanhVien())
+                + "\n\u0110i\u1ec3m: " + customer.getDiemTichLuy());
     }
 
     private void handleEditCustomer(KhachHang customer) {
         if (customer == null) {
-            AlertUtils.showWarning("Vui lòng chọn khách hàng cần sửa.");
+            AlertUtils.showWarning("Vui l\u00f2ng ch\u1ecdn kh\u00e1ch h\u00e0ng c\u1ea7n s\u1eeda.");
             return;
         }
-        AlertUtils.showInfo("Chức năng sửa khách hàng đang chờ màn hình nhập liệu. Mã KH: " + customer.getKhachHangId());
+        AlertUtils.showInfo("Ch\u1ee9c n\u0103ng s\u1eeda kh\u00e1ch h\u00e0ng \u0111ang ch\u1edd m\u00e0n h\u00ecnh nh\u1eadp li\u1ec7u. M\u00e3 KH: " + customer.getKhachHangId());
     }
 
     private void updatePagination() {
         pageInfoLabel.setText("Trang " + currentPage + " / " + totalPages);
-        resultCountLabel.setText("Tổng " + totalRows + " khách hàng");
+        resultCountLabel.setText("T\u1ed5ng " + totalRows + " kh\u00e1ch h\u00e0ng");
         previousPageButton.setDisable(totalRows == 0 || currentPage <= 1);
         nextPageButton.setDisable(totalRows == 0 || currentPage >= totalPages);
     }
@@ -199,7 +199,7 @@ public class CustomerListController {
     private class ActionCell extends TableCell<KhachHang, Void> {
         private final HBox box = new HBox(8);
         private final Button viewButton = new Button("Xem");
-        private final Button editButton = new Button("Sửa");
+        private final Button editButton = new Button("S\u1eeda");
 
         ActionCell() {
             viewButton.getStyleClass().addAll("action-button", "action-view-button");

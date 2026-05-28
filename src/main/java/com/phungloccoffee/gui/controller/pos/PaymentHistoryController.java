@@ -87,13 +87,13 @@ public class PaymentHistoryController {
             if ("da_thanh_toan".equals(value)) {
                 return "status-success";
             }
-            if (value.contains("l\u1ed7i") || value.contains("th\u1ea5t b\u1ea1i") || value.contains("h\u1ee7y")) {
+            if (value.contains("lỗi") || value.contains("thất bại") || value.contains("hủy")) {
                 return "status-danger";
             }
-            if (value.contains("ch\u1edd")) {
+            if (value.contains("chờ")) {
                 return "status-warning";
             }
-            if (value.contains("\u0111ang")) {
+            if (value.contains("đang")) {
                 return "status-info";
             }
             return "status-success";
@@ -109,7 +109,7 @@ public class PaymentHistoryController {
                 setText(null);
                 return;
             }
-            Button button = new Button("Thanh toan");
+            Button button = new Button("Thanh toán");
             button.getStyleClass().add("primary-button");
             button.setOnAction(event -> openPaymentScreen(history.getOrderCode()));
             setGraphic(button);
@@ -138,18 +138,6 @@ public class PaymentHistoryController {
             }
             node = node.getParent();
         }
-        throw new IllegalStateException("Khong tim thay vung hien thi noi dung de mo man hinh thanh toan.");
-    }
-
-    private List<PaymentHistory> sampleHistory() {
-        LocalDateTime now = LocalDateTime.now();
-        return List.of(
-                new PaymentHistory("HD001", "Nguyễn Thu Ngân", "Tiền mặt", new BigDecimal("185000"), now.minusMinutes(12), "Đã thanh toán"),
-                new PaymentHistory("HD002", "Nguyễn Thu Ngân", "QR Banking", new BigDecimal("240000"), now.minusMinutes(24), "Đã thanh toán"),
-                new PaymentHistory("HD003", "Trần Minh", "Thẻ", new BigDecimal("128000"), now.minusMinutes(36), "Chờ xử lý"),
-                new PaymentHistory("HD004", "Trần Minh", "Ví điện tử", new BigDecimal("315000"), now.minusMinutes(58), "Đã thanh toán"),
-                new PaymentHistory("HD005", "Nguyễn Thu Ngân", "QR Banking", new BigDecimal("76000"), now.minusHours(2), "Đã thanh toán")
-        );
+        throw new IllegalStateException("Không tìm thấy vùng hiển thị nội dung để mở màn hình thanh toán.");
     }
 }
-

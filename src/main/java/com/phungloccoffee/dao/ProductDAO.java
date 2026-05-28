@@ -27,6 +27,8 @@ public class ProductDAO {
                 FROM san_pham sp
                 LEFT JOIN danh_muc_san_pham dm ON dm.danh_muc_id = sp.danh_muc_id
                 WHERE sp.loai_san_pham = 'THANH_PHAM'
+                   OR UPPER(sp.loai_san_pham) = 'TOPPING'
+                   OR UPPER(dm.ten_danh_muc) = 'TOPPING'
                 ORDER BY dm.ten_danh_muc, sp.ten_san_pham
                 """;
         return findProducts(sql, null);

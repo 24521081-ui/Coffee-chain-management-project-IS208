@@ -5,6 +5,7 @@ import com.phungloccoffee.dao.OrderDAO;
 import com.phungloccoffee.exception.DatabaseException;
 import com.phungloccoffee.exception.PermissionException;
 import com.phungloccoffee.exception.ValidationException;
+import com.phungloccoffee.model.KhachHang;
 import com.phungloccoffee.model.Order;
 import com.phungloccoffee.model.OrderDetail;
 import com.phungloccoffee.model.offline.OfflineInventoryMovement;
@@ -14,10 +15,13 @@ import com.phungloccoffee.offline.InventoryCache;
 import com.phungloccoffee.offline.NetworkMonitor;
 import com.phungloccoffee.offline.OfflineStorage;
 import com.phungloccoffee.offline.SyncService;
+import com.phungloccoffee.util.DBConnection;
 import com.phungloccoffee.util.ValidationUtils;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +36,11 @@ public class PaymentBUS extends PermissionBUS {
             "Tien mat",
             "Chuyen khoan",
             "Vi dien tu",
-            "The ngan hang"
+            "The ngan hang",
+            "Ti\u1ec1n m\u1eb7t",
+            "Chuy\u1ec3n kho\u1ea3n",
+            "V\u00ed \u0111i\u1ec7n t\u1eed",
+            "Th\u1ebb ng\u00e2n h\u00e0ng"
     );
 
     private final OrderDAO orderDAO = new OrderDAO();
@@ -41,6 +49,7 @@ public class PaymentBUS extends PermissionBUS {
     private final InventoryCache inventoryCache = InventoryCache.getInstance();
     private final NetworkMonitor networkMonitor = NetworkMonitor.getInstance();
     private final SyncService syncService = new SyncService();
+    private final CustomerBUS customerBUS = new CustomerBUS();
 
     public void pay(int orderId, String method, BigDecimal amount)
             throws ValidationException, PermissionException, DatabaseException {
@@ -50,8 +59,8 @@ public class PaymentBUS extends PermissionBUS {
     public void pay(String orderId, String method, BigDecimal amount)
             throws ValidationException, PermissionException, DatabaseException {
         requireRole("THU_NGAN", "QUAN_LY_CHI_NHANH");
-        ValidationUtils.requireText(orderId, "Ma hoa don");
-        ValidationUtils.requireText(method, "Phuong thuc thanh toan");
+        ValidationUtils.requireText(orderId, "Mã hóa đơn");
+        ValidationUtils.requireText(method, "Phương thức thanh toán");
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new ValidationException("Số tiền thanh toán phải lớn hơn 0.");
         }
@@ -69,16 +78,30 @@ public class PaymentBUS extends PermissionBUS {
 
     public Order confirmPayment(String orderId, String paymentMethod)
             throws ValidationException, PermissionException, DatabaseException {
+        return confirmPaymentWithOptionalCustomer(orderId, paymentMethod, false, "", "", "").order();
+    }
+
+    public PaymentResult confirmPaymentWithOptionalCustomer(String orderId, String paymentMethod, boolean registerCustomer,
+                                                            String customerName, String customerPhone, String customerEmail)
+            throws ValidationException, PermissionException, DatabaseException {
         requireRole("THU_NGAN", "QUAN_LY_CHI_NHANH");
-        ValidationUtils.requireText(orderId, "Ma hoa don");
-        ValidationUtils.requireText(paymentMethod, "Phuong thuc thanh toan");
+        ValidationUtils.requireText(orderId, "Mã hóa đơn");
+        ValidationUtils.requireText(paymentMethod, "Phương thức thanh toán");
         if (!ALLOWED_PAYMENT_METHODS.contains(paymentMethod)) {
             throw new ValidationException("Phương thức thanh toán không hợp lệ.");
         }
 
+        KhachHang newCustomer = null;
+        if (registerCustomer) {
+            newCustomer = customerBUS.validateAndBuildNewMember(customerName, customerPhone, customerEmail);
+        }
+
         Optional<OfflineOrder> offlineOrder = findOfflineOrder(orderId);
         if (offlineOrder.isPresent()) {
-            return confirmOfflinePayment(offlineOrder.get(), paymentMethod);
+            if (newCustomer != null) {
+                throw new ValidationException("Không thể đăng ký khách hàng thành viên khi hóa đơn đang lưu offline.");
+            }
+            return new PaymentResult(confirmOfflinePayment(offlineOrder.get(), paymentMethod), false);
         }
         if (!networkMonitor.checkNow()) {
             throw new ValidationException("Đơn này chưa có trong lưu trữ offline nên không thể xác nhận khi mất kết nối Oracle.");
@@ -90,18 +113,20 @@ public class PaymentBUS extends PermissionBUS {
             throw new ValidationException("Đơn hàng này đã được thanh toán");
         }
 
-        Order paidOrder = orderDAO.confirmPayment(orderId);
+        Order paidOrder = newCustomer == null
+                ? orderDAO.confirmPayment(orderId)
+                : confirmPaymentAndCreateCustomer(orderId, newCustomer);
         try {
             syncService.refreshInventoryCache(paidOrder.getChiNhanhId());
         } catch (Exception ignored) {
         }
-        return paidOrder;
+        return new PaymentResult(paidOrder, newCustomer != null);
     }
 
     public Order getOrderForPayment(String orderId)
             throws ValidationException, PermissionException, DatabaseException {
         requireRole("THU_NGAN", "QUAN_LY_CHI_NHANH", "IT_ADMIN");
-        ValidationUtils.requireText(orderId, "Ma hoa don");
+        ValidationUtils.requireText(orderId, "Mã hóa đơn");
         Optional<OfflineOrder> offlineOrder = findOfflineOrder(orderId);
         if (offlineOrder.isPresent()) {
             return toOrder(offlineOrder.get());
@@ -113,12 +138,33 @@ public class PaymentBUS extends PermissionBUS {
     public List<OrderDetail> getOrderDetailsForPayment(String orderId)
             throws ValidationException, PermissionException, DatabaseException {
         requireRole("THU_NGAN", "QUAN_LY_CHI_NHANH", "IT_ADMIN");
-        ValidationUtils.requireText(orderId, "Ma hoa don");
+        ValidationUtils.requireText(orderId, "Mã hóa đơn");
         Optional<OfflineOrder> offlineOrder = findOfflineOrder(orderId);
         if (offlineOrder.isPresent()) {
             return toOrderDetails(offlineOrder.get());
         }
         return detailDAO.findByDonHangId(orderId);
+    }
+
+    private Order confirmPaymentAndCreateCustomer(String orderId, KhachHang customer)
+            throws DatabaseException, ValidationException {
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
+            customerBUS.createCustomer(conn, customer);
+            Order paidOrder = orderDAO.confirmPaymentAndAssignCustomer(conn, orderId, customer.getKhachHangId());
+            conn.commit();
+            return paidOrder;
+        } catch (SQLException e) {
+            rollbackQuietly(conn);
+            throw new DatabaseException("Không thể thêm khách hàng. Vui lòng kiểm tra lại thông tin.", e);
+        } catch (DatabaseException | ValidationException e) {
+            rollbackQuietly(conn);
+            throw e;
+        } finally {
+            closeQuietly(conn);
+        }
     }
 
     private Order confirmOfflinePayment(OfflineOrder offlineOrder, String paymentMethod)
@@ -201,5 +247,28 @@ public class PaymentBUS extends PermissionBUS {
             ));
         }
         return details;
+    }
+
+    private void rollbackQuietly(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try {
+            conn.rollback();
+        } catch (SQLException ignored) {
+        }
+    }
+
+    private void closeQuietly(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try {
+            conn.close();
+        } catch (SQLException ignored) {
+        }
+    }
+
+    public record PaymentResult(Order order, boolean customerCreated) {
     }
 }
