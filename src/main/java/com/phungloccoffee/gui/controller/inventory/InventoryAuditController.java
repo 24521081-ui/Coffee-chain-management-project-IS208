@@ -1,11 +1,13 @@
 package com.phungloccoffee.gui.controller.inventory;
 
+import com.phungloccoffee.bus.MaterialLossBUS;
 import com.phungloccoffee.bus.WarehouseWorkflowBUS;
 import com.phungloccoffee.exception.DatabaseException;
 import com.phungloccoffee.exception.PermissionException;
 import com.phungloccoffee.exception.ValidationException;
 import com.phungloccoffee.gui.service.SessionManager;
 import com.phungloccoffee.model.InventoryItem;
+import com.phungloccoffee.model.MaterialLossRecord;
 import com.phungloccoffee.model.WarehouseApprovalItem;
 import com.phungloccoffee.model.WarehouseSlip;
 import com.phungloccoffee.model.WarehouseSlipLine;
@@ -32,7 +34,9 @@ import javafx.util.converter.DoubleStringConverter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 public class InventoryAuditController {
@@ -60,6 +64,7 @@ public class InventoryAuditController {
     @FXML private DatePicker historyToDatePicker;
 
     private final WarehouseWorkflowBUS workflowBUS = new WarehouseWorkflowBUS();
+    private final MaterialLossBUS materialLossBUS = new MaterialLossBUS();
     private final ObservableList<AuditRow> auditRows = FXCollections.observableArrayList();
     private final ObservableList<SlipHistoryRow> historyRows = FXCollections.observableArrayList();
     private final ObservableList<SlipHistoryRow> allHistoryRows = FXCollections.observableArrayList();
@@ -156,11 +161,18 @@ public class InventoryAuditController {
 
     private void loadHistory() {
         try {
-            allHistoryRows.setAll(workflowBUS.loadMySlipHistory(WarehouseSlipType.STOCKTAKE).stream()
-                    .map(this::toHistoryRow)
+            List<SlipHistoryRow> mergedRows = new ArrayList<>();
+            mergedRows.addAll(workflowBUS.loadMySlipHistory(WarehouseSlipType.STOCKTAKE).stream()
+                    .map(this::toStocktakeHistoryRow)
                     .toList());
+            mergedRows.addAll(materialLossBUS.loadLossHistoryForCurrentBranch().stream()
+                    .filter(record -> record.getCreatedAt() != null)
+                    .map(this::toLossHistoryRow)
+                    .toList());
+            mergedRows.sort((left, right) -> right.getCreatedDateTime().compareTo(left.getCreatedDateTime()));
+            allHistoryRows.setAll(mergedRows);
             applyHistoryDateFilter();
-        } catch (DatabaseException | PermissionException e) {
+        } catch (DatabaseException | PermissionException | ValidationException e) {
             allHistoryRows.clear();
             historyRows.clear();
         }
@@ -187,17 +199,39 @@ public class InventoryAuditController {
                 .toList());
     }
 
-    private SlipHistoryRow toHistoryRow(WarehouseApprovalItem item) {
+    private SlipHistoryRow toStocktakeHistoryRow(WarehouseApprovalItem item) {
         String note = item.getRejectedReason() != null && !item.getRejectedReason().isBlank()
                 ? item.getRejectedReason()
                 : (item.getRelatedParty() == null ? "" : item.getRelatedParty());
         return new SlipHistoryRow(
                 item.getSlipId(),
+                "Kiểm kê kho",
                 item.getCreatedAt().toLocalDate(),
+                item.getCreatedAt(),
                 item.getCreatedAt().format(historyFormatter),
                 WarehouseSlipStatus.toDisplay(item.getStatus()),
                 note
         );
+    }
+
+    private SlipHistoryRow toLossHistoryRow(MaterialLossRecord item) {
+        return new SlipHistoryRow(
+                item.getLossId(),
+                "Hao hụt nguyên liệu",
+                item.getCreatedAt().toLocalDate(),
+                item.getCreatedAt(),
+                item.getCreatedAt().format(historyFormatter),
+                toLossStatus(item.getStatus()),
+                item.getReason() == null ? "" : item.getReason()
+        );
+    }
+
+    private String toLossStatus(String status) {
+        return switch (status) {
+            case "DA_DUYET" -> "Đã duyệt";
+            case "TU_CHOI" -> "Từ chối";
+            default -> "Chờ duyệt";
+        };
     }
 
     private static class ExplanationRequirementCell extends TableCell<AuditRow, String> {
@@ -231,8 +265,8 @@ public class InventoryAuditController {
 
             Label badge = new Label(status);
             String styleClass = switch (status) {
-                case "ÄÃ£ duyá»‡t" -> "status-success";
-                case "Tá»« chá»‘i" -> "status-danger";
+                case "Đã duyệt" -> "status-success";
+                case "Từ chối" -> "status-danger";
                 default -> "status-warning";
             };
             badge.getStyleClass().addAll("status-badge", styleClass);
@@ -303,23 +337,34 @@ public class InventoryAuditController {
 
     public static class SlipHistoryRow {
         private final SimpleStringProperty code;
+        private final SimpleStringProperty type;
         private final LocalDate createdDate;
+        private final LocalDateTime createdDateTime;
         private final SimpleStringProperty date;
         private final SimpleStringProperty status;
         private final SimpleStringProperty note;
 
-        public SlipHistoryRow(String code, LocalDate createdDate, String date, String status, String note) {
+        public SlipHistoryRow(String code, String type, LocalDate createdDate, LocalDateTime createdDateTime,
+                              String date, String status, String note) {
             this.code = new SimpleStringProperty(code);
+            this.type = new SimpleStringProperty(type);
             this.createdDate = createdDate;
+            this.createdDateTime = createdDateTime;
             this.date = new SimpleStringProperty(date);
             this.status = new SimpleStringProperty(status);
             this.note = new SimpleStringProperty(note);
         }
 
         public String getCode() { return code.get(); }
+        public String getType() { return type.get(); }
         public LocalDate getCreatedDate() { return createdDate; }
+        public LocalDateTime getCreatedDateTime() { return createdDateTime; }
         public String getDate() { return date.get(); }
         public String getStatus() { return status.get(); }
-        public String getNote() { return note.get(); }
+        public String getNote() {
+            String prefix = getType() == null || getType().isBlank() ? "" : "[" + getType() + "] ";
+            String content = note.get() == null ? "" : note.get();
+            return prefix + content;
+        }
     }
 }
