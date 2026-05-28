@@ -1,6 +1,5 @@
 *.class
 config.properties
-config.example.properties
 run.bat
 target/
 DBConnection.java
